@@ -1,21 +1,17 @@
 package com.yury.trade.delegate;
 
-import com.yury.trade.entity.Option;
-import com.yury.trade.entity.Symbol;
 import com.yury.trade.repository.OptionRepository;
 import com.yury.trade.repository.StatsRepository;
-import com.yury.trade.repository.SymbolRepository;
+import com.yury.trade.repository.StockHistoryRepository;
+import com.yury.trade.repository.StockSymbolRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.util.Date;
-import java.util.List;
 
 @Component
 public class PersistenceDelegate {
 
     @Autowired
-    private SymbolRepository symbolRepository;
+    private StockSymbolRepository stockSymbolRepository;
 
     @Autowired
     private OptionRepository optionRepository;
@@ -23,8 +19,11 @@ public class PersistenceDelegate {
     @Autowired
     private StatsRepository statsRepository;
 
-    public SymbolRepository getSymbolRepository() {
-        return symbolRepository;
+    @Autowired
+    private StockHistoryRepository stockHistoryRepository;
+
+    public StockSymbolRepository getStockSymbolRepository() {
+        return stockSymbolRepository;
     }
 
     public OptionRepository getOptionRepository() {
@@ -35,22 +34,8 @@ public class PersistenceDelegate {
         return statsRepository;
     }
 
-    public void saveSymbols(List<Symbol> symbols) {
-
-        for (Symbol symbol : symbols) {
-            symbol.setUpdated(new Date());
-        }
-
-        symbolRepository.saveAll(symbols);
-    }
-
-    public void saveOptions(List<Option> options) {
-
-        for (Option option : options) {
-            option.setUpdated(new Date());
-        }
-
-        optionRepository.saveAll(options);
+    public StockHistoryRepository getStockHistoryRepository() {
+        return stockHistoryRepository;
     }
 
 }

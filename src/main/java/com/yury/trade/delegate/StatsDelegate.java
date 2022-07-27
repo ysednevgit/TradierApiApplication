@@ -1,12 +1,13 @@
 package com.yury.trade.delegate;
 
-import com.yury.trade.entity.Stats;
-import com.yury.trade.entity.Symbol;
+import com.yury.trade.entity.OptionV2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Collection;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 @Component
 public class StatsDelegate {
@@ -14,83 +15,74 @@ public class StatsDelegate {
     @Autowired
     private PersistenceDelegate persistenceDelegate;
 
-    public Stats getStats(Collection<Symbol> optionSymbols) {
+    private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
-        persistenceDelegate.getStatsRepository().deleteAll();
+    public void getStats() throws ParseException {
 
-        if (optionSymbols == null || optionSymbols.size() < 2) {
+        String stockSymbol = "SPY";
+        Date date = sdf.parse("2022-07-22");
+
+        Iterable<OptionV2> options = persistenceDelegate.getOptionRepository().findByUnderlyingAndGreeks_updated_at(stockSymbol, date);
+
+        OptionV2 option1 = getClosest(20d, 300, OptionV2.OptionType.call, options);
+        OptionV2 option2 = getClosest(80d, 10, OptionV2.OptionType.call, options);
+
+        //strategy 1
+        List<OptionV2> options1 = persistenceDelegate.getOptionRepository().findByOptionV2IdSymbol(option1.getOptionV2Id().getSymbol());
+        List<OptionV2> options2 = persistenceDelegate.getOptionRepository().findByOptionV2IdSymbol(option2.getOptionV2Id().getSymbol());
+
+        for (int i = 0; i < options1.size(); i++) {
+            double price = options1.get(i).getMid_price() * 6 - options2.get(i).getMid_price() * 1;
+            System.out.println(price);
+        }
+
+
+    }
+
+    private OptionV2 getClosest(double delta,
+                                final int days_to_expiry,
+                                final OptionV2.OptionType optionType,
+                                final Iterable<OptionV2> options) {
+
+        if (options == null || !options.iterator().hasNext()) {
             return null;
         }
 
-        Stats stats = new Stats();
-        stats.setUpdated(new Date());
+        delta = delta / 100;
 
-        Double lowIvPut = null;
-        String lowIvPutSymbol = null;
+        OptionV2 result = null;
 
-        Double highIvPut = null;
-        String highIvPutSymbol = null;
+        for (OptionV2 optionV2 : options) {
 
-        Double lowIvCall = null;
-        String lowIvCallSymbol = null;
+            boolean isCorrectOptionType = optionType.equals(optionV2.getOption_type());
 
-        Double highIvCall = null;
-        String highIvCallSymbol = null;
-
-        Double putRatio;
-        Double callRatio;
-
-        for (Symbol optionSymbol : optionSymbols) {
-
-            if (stats.getSymbol() == null) {
-                stats.setSymbol(optionSymbol.getRoot_symbol());
+            if (!isCorrectOptionType) {
+                continue;
             }
 
-            if (Symbol.OptionType.call.equals(optionSymbol.getOption_type())) {
-                if (lowIvCall == null || lowIvCall > optionSymbol.getGreeks_iv()) {
-                    lowIvCall = optionSymbol.getGreeks_iv();
-                    lowIvCallSymbol = optionSymbol.getSymbol();
-                }
-                if (highIvCall == null || highIvCall < optionSymbol.getGreeks_iv()) {
-                    highIvCall = optionSymbol.getGreeks_iv();
-                    highIvCallSymbol = optionSymbol.getSymbol();
-                }
+            if (result == null) {
+
+                result = optionV2;
+                continue;
             }
 
-            if (Symbol.OptionType.put.equals(optionSymbol.getOption_type())) {
-                if (lowIvPut == null || lowIvPut > optionSymbol.getGreeks_iv()) {
-                    lowIvPut = optionSymbol.getGreeks_iv();
-                    lowIvPutSymbol = optionSymbol.getSymbol();
-                }
-                if (highIvPut == null || highIvPut < optionSymbol.getGreeks_iv()) {
-                    highIvPut = optionSymbol.getGreeks_iv();
-                    highIvPutSymbol = optionSymbol.getSymbol();
-                }
+            double resultDeltaDistance = Math.abs(Math.abs(result.getDelta()) - Math.abs(delta));
+            double resultDaysDistance = Math.abs(result.getDays_left() - days_to_expiry);
+
+            double deltaDistance = Math.abs(Math.abs(optionV2.getDelta()) - Math.abs(delta));
+            double daysDistance = Math.abs(optionV2.getDays_left() - days_to_expiry);
+
+            if (daysDistance < resultDaysDistance) {
+                result = optionV2;
+            }
+
+            if ((daysDistance == resultDaysDistance) && (deltaDistance < resultDeltaDistance)) {
+                result = optionV2;
             }
 
         }
 
-        if (lowIvPut != null) {
-            putRatio = highIvPut / lowIvPut;
-            stats.setPutRatio(putRatio);
-        }
-        if (lowIvCall != null) {
-            callRatio = highIvCall / lowIvCall;
-            stats.setCallRatio(Math.round(callRatio * 100.0) / 100.0);
-        }
-
-        stats.setLowIvCall(lowIvCall);
-        stats.setHighIvCall(highIvCall);
-        stats.setLowIvPut(lowIvPut);
-        stats.setHighIvPut(highIvPut);
-
-        stats.setLowIvCallSymbol(lowIvCallSymbol);
-        stats.setHighIvCallSymbol(highIvCallSymbol);
-        stats.setLowIvPutSymbol(lowIvPutSymbol);
-        stats.setHighIvPutSymbol(highIvPutSymbol);
-
-        return stats;
+        return result;
     }
-
 
 }

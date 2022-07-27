@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.yury.trade.entity.Stats;
-import com.yury.trade.entity.Symbol;
+import com.yury.trade.entity.StockSymbol;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -41,7 +41,7 @@ public class MarketsDelegate {
         return objectMapper;
     }
 
-
+/**
     public String addStockSymbols(String indexes) throws IOException {
         String letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -91,9 +91,32 @@ public class MarketsDelegate {
         return "Success";
     }
 
+    public String addOptionsV2() throws IOException {
+
+        System.out.println("Updating Stock symbols............");
+
+        updateStockSymbols();
+
+        System.out.println("Updating Stock symbols.......DONE ");
+
+        System.out.println("Adding Stock options symbols............");
+
+        addStockOptionSymbols("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+
+        System.out.println("Adding Stock options symbols.......DONE ");
+
+        System.out.println("Updating Stats............");
+
+        updateStockOptions();
+
+        System.out.println("Updating Stats.......DONE ");
+
+        return "Success";
+    }
+
     public String addStockOptionSymbols(String letters) throws IOException {
 
-        Collection<Symbol> symbols = persistenceDelegate.getSymbolRepository().findGoodSymbols();
+        Collection<StockSymbol> symbols = persistenceDelegate.getSymbolRepository().findGoodSymbols();
 
         filterOptionSymbols(symbols, letters);
 
@@ -108,11 +131,11 @@ public class MarketsDelegate {
 
     public String updateStockOptions() {
 
-        Collection<Symbol> optionSymbols = persistenceDelegate.getSymbolRepository().findAllOptions();
+        Collection<StockSymbol> optionSymbols = persistenceDelegate.getSymbolRepository().findAllOptions();
 
         System.out.println("Found " + optionSymbols.size() + " optionSymbols");
 
-        Map<String, List<Symbol>> optionSymbolsMap = getOptionSymbolsMap(optionSymbols);
+        Map<String, List<StockSymbol>> optionSymbolsMap = getOptionSymbolsMap(optionSymbols);
 
         List<Stats> stats = new ArrayList<>();
 
@@ -128,16 +151,16 @@ public class MarketsDelegate {
         return "Success";
     }
 
-    Map<String, List<Symbol>> getOptionSymbolsMap(Collection<Symbol> optionSymbols) {
-        Map<String, List<Symbol>> optionSymbolsMap = new HashMap<>();
+    Map<String, List<StockSymbol>> getOptionSymbolsMap(Collection<StockSymbol> optionSymbols) {
+        Map<String, List<StockSymbol>> optionSymbolsMap = new HashMap<>();
 
-        for (Symbol symbol : optionSymbols) {
+        for (StockSymbol symbol : optionSymbols) {
             String key = symbol.getRoot_symbol();
 
             if (optionSymbolsMap.containsKey(key)) {
                 optionSymbolsMap.get(key).add(symbol);
             } else {
-                List<Symbol> symbols = new ArrayList<>();
+                List<StockSymbol> symbols = new ArrayList<>();
                 symbols.add(symbol);
                 optionSymbolsMap.put(key, symbols);
             }
@@ -145,11 +168,11 @@ public class MarketsDelegate {
         return optionSymbolsMap;
     }
 
-    private Symbol insertOptionSymbol(String optionSymbolName) throws IOException {
+    private StockSymbol insertOptionSymbol(String optionSymbolName) throws IOException {
 
         JsonNode jsonNode = tradierDelegate.quotes(optionSymbolName, "true");
 
-        Symbol symbol = getSymbol(jsonNode.get("quotes").get("quote"));
+        StockSymbol symbol = getSymbol(jsonNode.get("quotes").get("quote"));
 
         if (symbol != null) {
             symbol.setUpdated(new Date());
@@ -179,10 +202,10 @@ public class MarketsDelegate {
         }
     }
 
-    private Symbol getSymbol(JsonNode node) {
-        Symbol symbol = getObjectMapper().convertValue(node, Symbol.class);
+    private StockSymbol getSymbol(JsonNode node) {
+        StockSymbol symbol = getObjectMapper().convertValue(node, StockSymbol.class);
 
-        if (Symbol.Type.option.equals(symbol.getType())) {
+        if (StockSymbol.Type.option.equals(symbol.getType())) {
 
             JsonNode greeksNode = node.get("greeks");
 
@@ -212,10 +235,10 @@ public class MarketsDelegate {
 
     private int insertSymbols(ArrayNode symbolsNode) {
 
-        List<Symbol> symbols = new ArrayList<>();
+        List<StockSymbol> symbols = new ArrayList<>();
 
         for (int i = 0; i < symbolsNode.size(); i++) {
-            Symbol symbol = getSymbol(symbolsNode.get(i));
+            StockSymbol symbol = getSymbol(symbolsNode.get(i));
 
             if (symbol == null) {
                 continue;
@@ -227,8 +250,8 @@ public class MarketsDelegate {
         return symbols.size();
     }
 
-    private void filterOptionSymbols(Collection<Symbol> symbols, String letters) {
-        Iterator<Symbol> iterator = symbols.iterator();
+    private void filterOptionSymbols(Collection<StockSymbol> symbols, String letters) {
+        Iterator<StockSymbol> iterator = symbols.iterator();
 
         List<Character> chars = new ArrayList<>();
         for (char ch : letters.toCharArray()) {
@@ -236,7 +259,7 @@ public class MarketsDelegate {
         }
 
         while (iterator.hasNext()) {
-            Symbol symbol = iterator.next();
+            StockSymbol symbol = iterator.next();
 
             Character prefix = symbol.getSymbol().charAt(0);
 
@@ -247,12 +270,12 @@ public class MarketsDelegate {
 
     }
 
-    private List<String> getOptionSymbols(Collection<Symbol> symbols) throws IOException {
+    private List<String> getOptionSymbols(Collection<StockSymbol> symbols) throws IOException {
         List<String> optionSymbols = new ArrayList<>();
         List<String> tempOptionSymbols = new ArrayList<>();
 
         int itemId = 0;
-        for (Symbol symbol : symbols) {
+        for (StockSymbol symbol : symbols) {
 
             itemId++;
             Double last = symbol.getLast();
@@ -273,7 +296,7 @@ public class MarketsDelegate {
             System.out.println("Got " + filteredOptionSymbols.size() + " optionSymbols for " + symbol.getSymbol() + " " + itemId + "/" + symbols.size());
 
             if (filteredOptionSymbols.size() > 0) {
-                Symbol symbol1 = insertOptionSymbol(filteredOptionSymbols.get(0));
+                StockSymbol symbol1 = insertOptionSymbol(filteredOptionSymbols.get(0));
 
                 if (symbol1 != null) {
                     insertOptionSymbol(filteredOptionSymbols.get(1));
@@ -348,5 +371,7 @@ public class MarketsDelegate {
 
         return result;
     }
+
+ **/
 
 }

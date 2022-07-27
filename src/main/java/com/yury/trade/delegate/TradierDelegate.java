@@ -2,7 +2,6 @@ package com.yury.trade.delegate;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
@@ -11,11 +10,14 @@ import org.apache.http.util.EntityUtils;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 
 @Component
 public class TradierDelegate {
+
+    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
     public JsonNode search(String q, String indexes) throws IOException {
 
@@ -45,6 +47,19 @@ public class TradierDelegate {
         paramsMap.put("underlying", underlying);
 
         HttpUriRequest request = getUriRequest("options/lookup", getHeaders(), paramsMap);
+
+        return callService(request);
+    }
+
+    public JsonNode history(String symbol, String start, String end) throws IOException {
+
+        Map<String, String> paramsMap = new HashMap<>();
+        paramsMap.put("symbol", symbol);
+        paramsMap.put("interval", "daily");
+        paramsMap.put("start", start);
+        paramsMap.put("end", end);
+
+        HttpUriRequest request = getUriRequest("history", getHeaders(), paramsMap);
 
         return callService(request);
     }
