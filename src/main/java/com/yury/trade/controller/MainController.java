@@ -1,7 +1,7 @@
 package com.yury.trade.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yury.trade.delegate.MarketDelegateV2;
+import com.yury.trade.delegate.MarketDelegate;
 import com.yury.trade.delegate.StatsDelegate;
 import com.yury.trade.delegate.StockHistoryDelegate;
 import com.yury.trade.entity.OptionV2;
@@ -19,7 +19,7 @@ public class MainController {
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
-    private MarketDelegateV2 marketsDelegate2;
+    private MarketDelegate marketsDelegate;
 
     @Autowired
     private StockHistoryDelegate stockHistoryDelegate;
@@ -38,7 +38,7 @@ public class MainController {
     @PostMapping("/refresh")
     public String refresh() throws ParseException {
 
-        return marketsDelegate2.refreshIncompleteOptions();
+        return marketsDelegate.refreshIncompleteOptions();
     }
 
     @PostMapping("/add_stock_history")
@@ -51,19 +51,19 @@ public class MainController {
     @PostMapping("/add_stock_symbols")
     public String addStockSymbols(@RequestParam(value = "indexes") String indexes) throws IOException {
 
-        return marketsDelegate2.addStockSymbols(indexes);
+        return marketsDelegate.addStockSymbols(indexes);
     }
 
     @PostMapping("/insert_options_data")
     public String insertOptionsData() throws IOException {
 
-        return marketsDelegate2.insertOptions();
+        return marketsDelegate.insertOptions();
     }
 
     @GetMapping("/get_options_data")
     public @ResponseBody List<OptionV2> getOptionsData(@RequestParam(value = "stockSymbol") String stockSymbol) throws IOException {
 
-        return marketsDelegate2.getOptions(stockSymbol);
+        return marketsDelegate.getOptions(stockSymbol);
     }
 
 }

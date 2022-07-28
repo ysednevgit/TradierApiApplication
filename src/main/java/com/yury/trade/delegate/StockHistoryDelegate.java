@@ -29,7 +29,7 @@ public class StockHistoryDelegate {
     private TradierDelegate tradierDelegate;
 
     @Autowired
-    MarketDelegateV2 marketDelegateV2;
+    MarketDelegate marketDelegate;
 
     ObjectMapper objectMapper;
 
@@ -47,7 +47,7 @@ public class StockHistoryDelegate {
 
     public String addStockHistory(String start, String end) throws IOException {
 
-        for (String stockSymbol : marketDelegateV2.getStockSymbols()) {
+        for (String stockSymbol : marketDelegate.getStockSymbols()) {
             List<StockHistory> stockHistories = getStockHistories(stockSymbol, start, end);
 
             persistenceDelegate.getStockHistoryRepository().saveAll(stockHistories);

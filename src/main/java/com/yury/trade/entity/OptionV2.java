@@ -66,9 +66,20 @@ public class OptionV2 {
 
     private Integer days_left;
 
+
     public enum OptionType {
-        call,
-        put
+        call("C"),
+        put("P");
+
+        private String description;
+
+        OptionType(String description) {
+            this.description = description;
+        }
+
+        public String getDescription() {
+            return description;
+        }
     }
 
 }

@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Component
-public class MarketDelegateV2 {
+public class MarketDelegate {
 
     @Autowired
     private PersistenceDelegate persistenceDelegate;
