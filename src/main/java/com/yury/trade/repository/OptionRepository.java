@@ -23,4 +23,10 @@ public interface OptionRepository  extends CrudRepository<OptionV2, OptionV2Id> 
     @Query("SELECT s FROM OptionV2 s WHERE underlying = ?1 and greeks_updated_at = ?2")
     List<OptionV2> findByUnderlyingAndGreeks_updated_at(String underlying, Date greeks_updated_at);
 
+    @Query("SELECT s FROM OptionV2 s WHERE underlying = ?1 and strike = ?2 and greeks_updated_at = ?3")
+    List<OptionV2> findByUnderlyingAndStrikeAndGreeks_updated_at(String underlying, Double strike, Date minGreeks_updated_at);
+
+    @Query("SELECT s FROM OptionV2 s WHERE underlying = ?1 and delta = ?2 and greeks_updated_at = ?3")
+    List<OptionV2> findByUnderlyingAndDeltaAndGreeks_updated_at(String underlying, Double delta, Date minGreeks_updated_at);
+
 }

@@ -27,14 +27,14 @@ public class StatsDelegate {
         String stockSymbol = "SPY";
         Date date = sdf.parse("2022-07-22");
 
-        Iterable<OptionV2> allOptions = persistenceDelegate.getOptionRepository().findByUnderlyingAndGreeks_updated_at(stockSymbol, date);
+        List<OptionV2> allOptions = persistenceDelegate.getOptionRepository().findByUnderlyingAndGreeks_updated_at(stockSymbol, date);
 
         Map<Date, Double> stockHistoryMap = getStockHistoryMap(stockSymbol);
 
         List<Strategy> strategies = new StrategyTester().getStrategiesToTest();
 
         for (Strategy strategy : strategies) {
-            System.out.println("Checking strategy: " + strategy.getName() + " " + strategy.getDescription());
+            System.out.println("Strategy: " + strategy.getName() + " " + strategy.getDescription());
 
             Position position = new Position();
 
@@ -50,7 +50,7 @@ public class StatsDelegate {
 
                 firstStepOptions.add(option);
 
-                position.coeffs.add(getCoeff(strategy.getLegs().get(i)));
+                position.addCoeff(getCoeff(strategy.getLegs().get(i)));
 
                 List<OptionV2> legOptionsList_i = persistenceDelegate.getOptionRepository().findByOptionV2IdSymbol(option.getOptionV2Id().getSymbol());
                 maxOptionsAmount = Math.max(maxOptionsAmount, legOptionsList_i.size());
@@ -81,11 +81,7 @@ public class StatsDelegate {
                             continue;
                         }
 
-                        boolean rollSuccessful = rollPosition(position, strategy, legOptionsList_j, i, j, allOptions);
-
-                        if (rollSuccessful) {
-                            position.adjustments *= coeff;
-                        }
+                        rollPosition(position, strategy, legOptionsList_j, i, j);
                     }
 
                     if (legOptionsList_j.size() <= i) {
@@ -99,7 +95,7 @@ public class StatsDelegate {
                     return;
                 }
 
-                System.out.print("Date " + sdf.format(stepDate) + " ");
+                System.out.print(sdf.format(stepDate) + " ");
 
                 if (i == 0) {
                     initialPrice = position.positionPrice;
@@ -122,26 +118,31 @@ public class StatsDelegate {
         System.out.println("Get stats End.");
     }
 
-    private boolean rollPosition(final Position position, final Strategy strategy, List<OptionV2> legOptionsList_j, int i, int j, Iterable<OptionV2> options) {
+    private boolean rollPosition(final Position position, final Strategy strategy, List<OptionV2> legOptionsList_j, int i, int j) {
 
         OptionV2 newOption = null;
         OptionV2 originalOption = legOptionsList_j.get(i - 1);
 
+        int rollCoeff = position.rolls.get(j);
+        Date updated = originalOption.getGreeks_updated_at();
+
+        List<OptionV2> options;
+
         if (Strategy.RollingStrategy.ROLL_SAME_STRIKE.equals(strategy.getRollingStrategy())) {
-            newOption = getNextWithSameStrike(originalOption, getDaysToExpiry(strategy.getLegs().get(j)), options);
+            options = persistenceDelegate.getOptionRepository().findByUnderlyingAndStrikeAndGreeks_updated_at(originalOption.getUnderlying(), originalOption.getStrike(), updated);
+            newOption = getNextWithSameStrike(originalOption, getDaysToExpiry(strategy.getLegs().get(j)), null, options, rollCoeff);
         } else if (Strategy.RollingStrategy.ROLL_SAME_DELTA.equals(strategy.getRollingStrategy())) {
-            newOption = getNextWithSameDelta(originalOption, getDaysToExpiry(strategy.getLegs().get(j)), options);
+            options = persistenceDelegate.getOptionRepository().findByUnderlyingAndDeltaAndGreeks_updated_at(originalOption.getUnderlying(), originalOption.getDelta(), updated);
+            newOption = getNextWithSameDelta(originalOption, getDaysToExpiry(strategy.getLegs().get(j)), null, options, rollCoeff);
         }
 
-        if (newOption.getGreeks_updated_at().before(originalOption.getGreeks_updated_at())) {
-            return false;
-        }
+        position.roll(j);
 
         System.out.println("Rolling to new option " + newOption);
 
         double priceChange = (newOption.getMid_price() - originalOption.getMid_price()) * originalOption.getContract_size();
 
-        position.adjustments += priceChange;
+        position.adjustments += position.coeffs.get(j) * priceChange;
 
         List<OptionV2> newOptions = persistenceDelegate.getOptionRepository().findByOptionV2IdSymbolWithGreaterUpdated(newOption.getOptionV2Id().getSymbol(), originalOption.getGreeks_updated_at());
 
@@ -168,7 +169,7 @@ public class StatsDelegate {
         return Integer.parseInt(leg.split(" ")[3]);
     }
 
-    private OptionV2 getClosest(final String leg, final List<OptionV2> legOptions, final Iterable<OptionV2> options) {
+    private OptionV2 getClosest(final String leg, final List<OptionV2> legOptions, final List<OptionV2> options) {
 
         if (leg == null) {
             return null;
@@ -187,10 +188,15 @@ public class StatsDelegate {
             strikePrice = legOptions.get(legOptions.size() - 1).getStrike();
         }
 
-        return getClosest(delta, daysToExpiry, optionType, strikePrice, options);
+        return getClosest(delta, daysToExpiry, optionType, strikePrice, null, options);
     }
 
-    private OptionV2 getClosest(double delta, final int days_to_expiry, final OptionV2.OptionType optionType, final Double strikePrice, final Iterable<OptionV2> options) {
+    private OptionV2 getClosest(double delta,
+                                final int days_to_expiry,
+                                final OptionV2.OptionType optionType,
+                                final Double strikePrice,
+                                final Date minUpdated,
+                                final List<OptionV2> options) {
 
         if (options == null || !options.iterator().hasNext()) {
             return null;
@@ -201,6 +207,13 @@ public class StatsDelegate {
         OptionV2 result = null;
 
         for (OptionV2 optionV2 : options) {
+
+            if (minUpdated != null && minUpdated.after(optionV2.getGreeks_updated_at())) {
+                continue;
+            }
+
+            //     options.stream().filter(o -> o.getStrike().equals(strikePrice)).filter(o -> o.getOption_type().equals(optionType)).collect(Collectors.toList());
+            //    options.stream().filter(o -> o.getStrike().equals(strikePrice)).filter(o -> o.getGreeks_updated_at().after(minUpdated)).collect(Collectors.toList());
 
             if (strikePrice != null && !strikePrice.equals(optionV2.getStrike())) {
                 continue;
@@ -240,18 +253,21 @@ public class StatsDelegate {
         return result;
     }
 
-    private OptionV2 getNextWithSameStrike(final OptionV2 option, final int days_to_expiry, final Iterable<OptionV2> options) {
-        return getClosest(0, days_to_expiry * 2, option.getOption_type(), option.getStrike(), options);
+    private OptionV2 getNextWithSameStrike(final OptionV2 option, final int days_to_expiry, final Date minUpdated, final List<OptionV2> options, int rollCoeff) {
+        return getClosest(0, days_to_expiry * (rollCoeff + 2), option.getOption_type(), option.getStrike(), minUpdated, options);
     }
 
-    private OptionV2 getNextWithSameDelta(final OptionV2 option, final int days_to_expiry, final Iterable<OptionV2> options) {
-        return getClosest(option.getDelta(), days_to_expiry * 2, option.getOption_type(), null, options);
+    private OptionV2 getNextWithSameDelta(final OptionV2 option, final int days_to_expiry, final Date minUpdated, final List<OptionV2> options, int rollCoeff) {
+        return getClosest(option.getDelta(), days_to_expiry * (rollCoeff + 2), option.getOption_type(), null, minUpdated, options);
     }
 
     private class Position {
 
         List<OptionV2> options = new ArrayList<>();
-        List<Integer> coeffs = new ArrayList<>();
+        private final List<Integer> coeffs = new ArrayList<>();
+
+        //how many rolls happened for every leg
+        List<Integer> rolls = new ArrayList<>();
 
         int contractSize = 100;
 
@@ -260,6 +276,16 @@ public class StatsDelegate {
         double positionGamma = 0;
         double positionPrice = 0;
         double adjustments = 0;
+
+        void roll(int legIndex) {
+
+            rolls.set(legIndex, rolls.get(legIndex) + 1);
+        }
+
+        void addCoeff(int coeff) {
+            coeffs.add(coeff);
+            rolls.add(0);
+        }
 
         boolean add(final List<List<OptionV2>> legOptionsList, int index) {
 
@@ -309,8 +335,8 @@ public class StatsDelegate {
                     "delta=" + df2.format(contractSize * positionDelta) +
                     ", theta=" + df2.format(contractSize * positionTheta) +
                     ", gamma=" + df2.format(contractSize * positionGamma) +
-                    ", price=" + df2.format(contractSize * positionPrice) +
-                    ", adjustments=" + df2.format(adjustments) +
+                    ", $" + df2.format(contractSize * positionPrice) +
+                    ", adj=" + df2.format(adjustments) +
                     ", options=" + options +
                     "} ";
         }

@@ -3,15 +3,16 @@ package com.yury.trade.entity;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
+import javax.persistence.*;
+import java.text.DecimalFormat;
 import java.util.Date;
 
 @Entity
 @Data
 public class OptionV2 {
+
+    @Transient
+    private static DecimalFormat df2 = new DecimalFormat("###.##");
 
     @EmbeddedId
     private OptionV2Id optionV2Id;
@@ -68,7 +69,7 @@ public class OptionV2 {
 
     @Override
     public String toString() {
-        return optionV2Id.getSymbol() + " " + getGreeks_updated_at().toString().split(" ")[0] + " " + getDays_left() + " days left" ;
+        return optionV2Id.getSymbol() + " " + getDays_left() + " days left $" + df2.format(mid_price * contract_size) ;
     }
 
     public enum OptionType {
