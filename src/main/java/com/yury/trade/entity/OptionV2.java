@@ -4,12 +4,13 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.util.Date;
 
 @Entity
 @Data
-public class OptionV2 {
+public class OptionV2 implements Serializable {
 
     @Transient
     private static DecimalFormat df2 = new DecimalFormat("###.##");

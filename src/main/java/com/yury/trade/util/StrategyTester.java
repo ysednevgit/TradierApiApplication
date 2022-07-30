@@ -11,7 +11,7 @@ public class StrategyTester {
         List<Strategy> strategies = new ArrayList<>();
 
         //Ratio diagonals
-
+/**
         strategies.add(getStrategy(new Leg(6, 20, 400), new Leg(-1, 80, 7)));
         strategies.add(getStrategy(new Leg(4, 30, 400), new Leg(-1, 80, 7)));
         strategies.add(getStrategy(new Leg(2, 60, 400), new Leg(-1, 80, 7)));
@@ -46,10 +46,15 @@ public class StrategyTester {
         strategies.add(getStrategy(new Leg(1, 40, 30), new Leg(-1, 0, 3)));
         strategies.add(getStrategy(new Leg(1, 40, 30), new Leg(-1, 0, 6)));
         strategies.add(getStrategy(new Leg(1, 40, 30), new Leg(-1, 0, 6)));
+ **/
+
         strategies.add(getStrategy(new Leg(1, 30, 60), new Leg(-1, 0, 30)));
         strategies.add(getStrategy(new Leg(1, 30, 60), new Leg(-1, 0, 15)));
-
-
+        //double calendar
+        strategies.add(getStrategy(new Leg(1, 30, 60), new Leg(-1, 0, 15), new Leg(1, 30, 60, OptionV2.OptionType.put), new Leg(-1, 0, 15, OptionV2.OptionType.put)));
+        //custom
+        strategies.add(getStrategy(new Leg(1, 30, 30), new Leg(1, 30, 30, OptionV2.OptionType.put), new Leg(-1, 0, 7, OptionV2.OptionType.put)));
+        strategies.add(getStrategy(new Leg(1, 30, 60), new Leg(1, 30, 60, OptionV2.OptionType.put), new Leg(-1, 0, 15, OptionV2.OptionType.put)));
 
         //        strategies.add(getStrategy(new Leg(1, 50, 60), new Leg(-1, 0, 30)));
 

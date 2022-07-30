@@ -28,9 +28,9 @@ public class MainController {
     private StatsDelegate statsDelegate;
 
     @GetMapping("/get_stats")
-    public String getStats() throws ParseException {
+    public String getStats(@RequestParam(value = "createHistory") boolean createHistory) throws ParseException {
 
-        statsDelegate.getStats();
+        statsDelegate.getStats(createHistory);
 
         return "Success";
     }

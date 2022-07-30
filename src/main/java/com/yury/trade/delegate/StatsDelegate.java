@@ -2,8 +2,11 @@ package com.yury.trade.delegate;
 
 import com.yury.trade.entity.OptionV2;
 import com.yury.trade.entity.StockHistory;
+import com.yury.trade.util.Position;
 import com.yury.trade.util.Strategy;
+import com.yury.trade.util.StrategyHistory;
 import com.yury.trade.util.StrategyTester;
+import org.apache.commons.lang3.SerializationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -22,7 +25,7 @@ public class StatsDelegate {
 
     private static DecimalFormat df2 = new DecimalFormat("###.##");
 
-    public void getStats() throws ParseException {
+    public void getStats(boolean createHistory) throws ParseException {
 
         String stockSymbol = "SPY";
         Date date = sdf.parse("2022-07-22");
@@ -30,6 +33,8 @@ public class StatsDelegate {
         List<OptionV2> allOptions = persistenceDelegate.getOptionRepository().findByUnderlyingAndGreeks_updated_at(stockSymbol, date);
 
         Map<Date, Double> stockHistoryMap = getStockHistoryMap(stockSymbol);
+
+        List<StrategyHistory> strategyHistories = new ArrayList<>();
 
         List<Strategy> strategies = new StrategyTester().getStrategiesToTest();
 
@@ -62,7 +67,9 @@ public class StatsDelegate {
             double initialStockPrice = 0;
             double change = 0;
 
-            Date stepDate = null;
+            Date stepDate;
+
+            StrategyHistory strategyHistory = new StrategyHistory(strategy);
 
             for (int i = 0; i < maxOptionsAmount; i++) {
 
@@ -111,8 +118,14 @@ public class StatsDelegate {
 
                 System.out.println("Change " + df2.format(change) + "(" + df2.format(changeValue) + ")  " +
                         stockSymbol + " " + stockPrice + " change " + df2.format(stockPrice / initialStockPrice));
+
+                if (createHistory) {
+                    strategyHistory.addData(stepDate, SerializationUtils.clone(position));
+                }
             }
             System.out.println();
+
+            strategyHistories.add(strategyHistory);
         }
 
         System.out.println("Get stats End.");
@@ -259,87 +272,6 @@ public class StatsDelegate {
 
     private OptionV2 getNextWithSameDelta(final OptionV2 option, final int days_to_expiry, final Date minUpdated, final List<OptionV2> options, int rollCoeff) {
         return getClosest(option.getDelta(), days_to_expiry * (rollCoeff + 2), option.getOption_type(), null, minUpdated, options);
-    }
-
-    private class Position {
-
-        List<OptionV2> options = new ArrayList<>();
-        private final List<Integer> coeffs = new ArrayList<>();
-
-        //how many rolls happened for every leg
-        List<Integer> rolls = new ArrayList<>();
-
-        int contractSize = 100;
-
-        double positionDelta = 0;
-        double positionTheta = 0;
-        double positionGamma = 0;
-        double positionPrice = 0;
-        double adjustments = 0;
-
-        void roll(int legIndex) {
-
-            rolls.set(legIndex, rolls.get(legIndex) + 1);
-        }
-
-        void addCoeff(int coeff) {
-            coeffs.add(coeff);
-            rolls.add(0);
-        }
-
-        boolean add(final List<List<OptionV2>> legOptionsList, int index) {
-
-            Date updated = legOptionsList.get(0).get(index).getGreeks_updated_at();
-
-            if (legOptionsList.size() != coeffs.size()) {
-                return false;
-            }
-
-            for (List<OptionV2> legOptions : legOptionsList) {
-
-                if (legOptions.size() <= index || !updated.equals(legOptions.get(index).getGreeks_updated_at())) {
-                    return false;
-                }
-            }
-
-            options.clear();
-
-            for (List<OptionV2> legOptions : legOptionsList) {
-                options.add(legOptions.get(index));
-            }
-            calc();
-
-            return true;
-        }
-
-        private void calc() {
-            positionDelta = 0;
-            positionTheta = 0;
-            positionGamma = 0;
-            positionPrice = 0;
-
-            for (int i = 0; i < options.size(); i++) {
-                OptionV2 option = options.get(i);
-                int coeff = coeffs.get(i);
-
-                positionPrice += option.getMid_price() * coeff;
-                positionTheta += option.getTheta() * coeff;
-                positionGamma += option.getGamma() * coeff;
-                positionDelta += option.getDelta() * coeff;
-            }
-        }
-
-        @Override
-        public String toString() {
-            return "Position{ " +
-                    "delta=" + df2.format(contractSize * positionDelta) +
-                    ", theta=" + df2.format(contractSize * positionTheta) +
-                    ", gamma=" + df2.format(contractSize * positionGamma) +
-                    ", $" + df2.format(contractSize * positionPrice) +
-                    ", adj=" + df2.format(adjustments) +
-                    ", options=" + options +
-                    "} ";
-        }
     }
 
 }
