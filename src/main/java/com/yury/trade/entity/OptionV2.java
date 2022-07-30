@@ -66,6 +66,10 @@ public class OptionV2 {
 
     private Integer days_left;
 
+    @Override
+    public String toString() {
+        return optionV2Id.getSymbol() + " " + getGreeks_updated_at().toString().split(" ")[0] + " " + getDays_left() + " days left" ;
+    }
 
     public enum OptionType {
         call("C"),

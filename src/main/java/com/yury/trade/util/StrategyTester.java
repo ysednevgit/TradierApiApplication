@@ -1,7 +1,6 @@
 package com.yury.trade.util;
 
 import com.yury.trade.entity.OptionV2;
-import com.yury.trade.entity.Strategy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,36 +12,36 @@ public class StrategyTester {
 
         //Ratio diagonals
 /**
- strategies.add(getStrategy(new Leg(6, 20, 400), new Leg(-1, 80, 7)));
- strategies.add(getStrategy(new Leg(4, 30, 400), new Leg(-1, 80, 7)));
- strategies.add(getStrategy(new Leg(2, 60, 400), new Leg(-1, 80, 7)));
+        strategies.add(getStrategy(new Leg(6, 20, 400), new Leg(-1, 80, 7)));
+        strategies.add(getStrategy(new Leg(4, 30, 400), new Leg(-1, 80, 7)));
+        strategies.add(getStrategy(new Leg(2, 60, 400), new Leg(-1, 80, 7)));
 
- strategies.add(getStrategy(new Leg(6, 20, 300), new Leg(-1, 80, 7)));
- strategies.add(getStrategy(new Leg(4, 30, 300), new Leg(-1, 80, 7)));
- strategies.add(getStrategy(new Leg(2, 60, 300), new Leg(-1, 80, 7)));
+        strategies.add(getStrategy(new Leg(6, 20, 300), new Leg(-1, 80, 7)));
+        strategies.add(getStrategy(new Leg(4, 30, 300), new Leg(-1, 80, 7)));
+        strategies.add(getStrategy(new Leg(2, 60, 300), new Leg(-1, 80, 7)));
 
- strategies.add(getStrategy(new Leg(6, 20, 200), new Leg(-1, 80, 7)));
- strategies.add(getStrategy(new Leg(4, 30, 200), new Leg(-1, 80, 7)));
- strategies.add(getStrategy(new Leg(2, 60, 200), new Leg(-1, 80, 7)));
+        strategies.add(getStrategy(new Leg(6, 20, 200), new Leg(-1, 80, 7)));
+        strategies.add(getStrategy(new Leg(4, 30, 200), new Leg(-1, 80, 7)));
+        strategies.add(getStrategy(new Leg(2, 60, 200), new Leg(-1, 80, 7)));
 
- strategies.add(getStrategy(new Leg(6, 20, 100), new Leg(-1, 80, 7)));
- strategies.add(getStrategy(new Leg(4, 30, 100), new Leg(-1, 80, 7)));
- strategies.add(getStrategy(new Leg(2, 60, 100), new Leg(-1, 80, 7)));
+        strategies.add(getStrategy(new Leg(6, 20, 100), new Leg(-1, 80, 7)));
+        strategies.add(getStrategy(new Leg(4, 30, 100), new Leg(-1, 80, 7)));
+        strategies.add(getStrategy(new Leg(2, 60, 100), new Leg(-1, 80, 7)));
 
- strategies.add(getStrategy(new Leg(3, 50, 120), new Leg(-2, 60, 30)));
+        strategies.add(getStrategy(new Leg(3, 50, 120), new Leg(-2, 60, 30)));
 
- strategies.add(getStrategy(new Leg(4, 80, 300), new Leg(-3, 85, 30)));
-
+        strategies.add(getStrategy(new Leg(4, 80, 300), new Leg(-3, 85, 30)));
         //straddle
         strategies.add(getStrategy(new Leg(-1, 50, 7), new Leg(-1, 50, 7, OptionV2.OptionType.put)));
         strategies.add(getStrategy(new Leg(-1, 50, 10), new Leg(-1, 50, 10, OptionV2.OptionType.put)));
         strategies.add(getStrategy(new Leg(-1, 50, 15), new Leg(-1, 50, 15, OptionV2.OptionType.put)));
 
         strategies.add(getStrategy(new Leg(-1, 70, 10), new Leg(-1, 30, 10, OptionV2.OptionType.put), new Leg(-1, 30, 10), new Leg(-1, 70, 10, OptionV2.OptionType.put)));
+ **/
 
-**/
         //calendars
-        strategies.add(getStrategy(new Leg(1, 50, 30), new Leg(-1, 0, 7)));
+        strategies.add(getStrategy(new Leg(1, 50, 30), new Leg(-1, 0, 3)));
+//        strategies.add(getStrategy(new Leg(1, 50, 60), new Leg(-1, 0, 30)));
 
         return strategies;
     }
