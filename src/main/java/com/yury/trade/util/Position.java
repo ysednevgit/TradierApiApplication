@@ -2,7 +2,6 @@ package com.yury.trade.util;
 
 import com.yury.trade.entity.OptionV2;
 
-import javax.persistence.Transient;
 import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -13,11 +12,8 @@ public class Position implements Serializable {
 
     private static DecimalFormat df2 = new DecimalFormat("###.##");
 
-    @Transient
     public List<OptionV2> options = new ArrayList<>();
-    @Transient
     public final List<Integer> coeffs = new ArrayList<>();
-    @Transient
     //how many rolls happened for every leg
     public List<Integer> rolls = new ArrayList<>();
 
@@ -28,6 +24,8 @@ public class Position implements Serializable {
     double positionGamma = 0;
     public double positionPrice = 0;
     public double adjustments = 0;
+
+    public int daysRun = 0;
 
     public void roll(int legIndex) {
 

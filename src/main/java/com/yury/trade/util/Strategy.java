@@ -37,13 +37,13 @@ public class Strategy {
 
     @Override
     public String toString() {
-        return "Strategy{" +
-                "name='" + name + '\'' +
-                '}';
+
+        String rs = RollingStrategy.ROLL_SAME_DELTA.equals(rollingStrategy) ? rollingStrategy.name() : "";
+
+        return "Strategy{ " + name + " " + rs + "}";
     }
 
-    public enum RollingStrategy
-    {
+    public enum RollingStrategy {
         ROLL_SAME_STRIKE,
         ROLL_SAME_DELTA
     }
