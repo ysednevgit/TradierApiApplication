@@ -21,6 +21,9 @@ public interface OptionRepository extends CrudRepository<OptionV2, OptionV2Id> {
     @Query("SELECT s FROM OptionV2 s WHERE optionV2Id.symbol = ?1 and greeks_updated_at > ?2")
     List<OptionV2> findByOptionV2IdSymbolWithGreaterUpdated(String symbol, Date updated);
 
+    @Query("SELECT s FROM OptionV2 s WHERE optionV2Id.symbol = ?1 and greeks_updated_at >= ?2")
+    List<OptionV2> findByOptionV2IdSymbolWithGreaterOrSameUpdated(String symbol, Date updated);
+
     List<OptionV2> findByUnderlying(String Underlying);
 
     @Query("SELECT s FROM OptionV2 s WHERE underlying = ?1 and greeks_updated_at = ?2")

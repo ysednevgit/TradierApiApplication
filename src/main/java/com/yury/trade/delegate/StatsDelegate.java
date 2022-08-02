@@ -79,7 +79,7 @@ public class StatsDelegate {
 
                 position.addCoeff(getCoeff(strategy.getLegs().get(i)));
 
-                List<OptionV2> legOptionsList_i = persistenceDelegate.getOptionRepository().findByOptionV2IdSymbol(option.getOptionV2Id().getSymbol());
+                List<OptionV2> legOptionsList_i = persistenceDelegate.getOptionRepository().findByOptionV2IdSymbolWithGreaterOrSameUpdated(option.getOptionV2Id().getSymbol(), startDate);
                 maxOptionsAmount = Math.max(maxOptionsAmount, legOptionsList_i.size());
 
                 legOptionsList.add(legOptionsList_i);
@@ -137,7 +137,7 @@ public class StatsDelegate {
 
                 if (changeValue < maxDrawDownValue) {
                     maxDrawDownValue = (int) changeValue;
-                    maxDrawDown = maxDrawDownValue / initialPrice;
+                    maxDrawDown = maxDrawDownValue / (initialPrice * position.contractSize);
                 }
 
                 System.out.print(position);
