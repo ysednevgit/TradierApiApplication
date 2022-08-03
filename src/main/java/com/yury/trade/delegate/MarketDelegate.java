@@ -79,7 +79,16 @@ public class MarketDelegate {
         return "Success";
     }
 
-    public List<String> getStockSymbols() {
+    public List<String> getAllStockSymbols() {
+
+        List<String> symbolNames = persistenceDelegate.getStockSymbolRepository().findAllSymbols();
+
+        System.out.println("Found " + symbolNames.size() + " symbol names");
+
+        return symbolNames;
+    }
+
+    public List<String> getEnabledStockSymbols() {
 
         List<String> symbolNames = persistenceDelegate.getStockSymbolRepository().findEnabledSymbols();
 
@@ -91,7 +100,7 @@ public class MarketDelegate {
     public String insertOptions() {
 
         try {
-            List<String> stockSymbols = getStockSymbols();
+            List<String> stockSymbols = getEnabledStockSymbols();
 
             for (String stockSymbol : stockSymbols) {
                 System.out.println("Getting options data for " + stockSymbol);

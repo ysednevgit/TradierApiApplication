@@ -14,6 +14,7 @@ import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Component
@@ -47,7 +48,7 @@ public class StockHistoryDelegate {
 
     public String addStockHistory(String start, String end) throws IOException {
 
-        for (String stockSymbol : marketDelegate.getStockSymbols()) {
+        for (String stockSymbol : marketDelegate.getEnabledStockSymbols()) {
             List<StockHistory> stockHistories = getStockHistories(stockSymbol, start, end);
 
             persistenceDelegate.getStockHistoryRepository().saveAll(stockHistories);
@@ -67,7 +68,7 @@ public class StockHistoryDelegate {
 
         JsonNode jsonNode = tradierDelegate.history(stockSymbol, start, end);
 
-        if (jsonNode.get("history") == null || jsonNode.get("history").get("day") == null) {
+        if (jsonNode.get("history") == null || jsonNode.get("history").get("day") == null || !(jsonNode.get("history").get("day") instanceof ArrayNode)) {
             return stockHistories;
         }
 

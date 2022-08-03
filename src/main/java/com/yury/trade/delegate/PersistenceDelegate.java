@@ -1,9 +1,6 @@
 package com.yury.trade.delegate;
 
-import com.yury.trade.repository.OptionRepository;
-import com.yury.trade.repository.StockHistoryRepository;
-import com.yury.trade.repository.StockSymbolRepository;
-import com.yury.trade.repository.StrategyPerformanceRepository;
+import com.yury.trade.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -18,6 +15,9 @@ public class PersistenceDelegate {
 
     @Autowired
     private StockHistoryRepository stockHistoryRepository;
+
+    @Autowired
+    private StockQuoteRepository stockQuoteRepository;
 
     @Autowired
     private StrategyPerformanceRepository strategyPerformanceRepository;
@@ -36,5 +36,9 @@ public class PersistenceDelegate {
 
     public StrategyPerformanceRepository getStrategyPerformanceRepository() {
         return strategyPerformanceRepository;
+    }
+
+    public StockQuoteRepository getStockQuoteRepository() {
+        return stockQuoteRepository;
     }
 }

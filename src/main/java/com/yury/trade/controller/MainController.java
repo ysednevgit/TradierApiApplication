@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yury.trade.delegate.MarketDelegate;
 import com.yury.trade.delegate.StatsDelegate;
 import com.yury.trade.delegate.StockHistoryDelegate;
+import com.yury.trade.delegate.StockQuoteDelegate;
 import com.yury.trade.entity.OptionV2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +26,9 @@ public class MainController {
     private StockHistoryDelegate stockHistoryDelegate;
 
     @Autowired
+    private StockQuoteDelegate stockQuoteDelegate;
+
+    @Autowired
     private StatsDelegate statsDelegate;
 
     @GetMapping("/get_stats")
@@ -39,6 +43,12 @@ public class MainController {
     public String refresh() throws ParseException {
 
         return marketsDelegate.refreshIncompleteOptions();
+    }
+
+    @PostMapping("/add_stock_quotes")
+    public String addStockQuotes() throws IOException {
+
+        return stockQuoteDelegate.addStockQuotes();
     }
 
     @PostMapping("/add_stock_history")
