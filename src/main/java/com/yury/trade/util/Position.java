@@ -55,7 +55,12 @@ public class Position implements Serializable {
         options.clear();
 
         for (List<OptionV2> legOptions : legOptionsList) {
-            options.add(legOptions.get(index));
+            OptionV2 option = legOptions.get(index);
+
+            if (option.getMid_price() == null || option.getMid_price() == 0) {
+                return false;
+            }
+            options.add(option);
         }
         calc();
 
@@ -64,13 +69,12 @@ public class Position implements Serializable {
 
     @Override
     public String toString() {
-        return "Position{ " +
-                "delta=" + df2.format(contractSize * positionDelta) +
+        return "delta=" + df2.format(contractSize * positionDelta) +
                 ", theta=" + df2.format(contractSize * positionTheta) +
                 ", gamma=" + df2.format(contractSize * positionGamma) +
                 ", $" + df2.format(contractSize * positionPrice) +
                 ", adj=" + df2.format(adjustments) +
-                ", options=" + options +
+                ", " + options +
                 "} ";
     }
 

@@ -7,8 +7,20 @@ import java.util.List;
 
 public class StrategyTester {
 
+    private Strategy.StrategyType strategyType;
+
     public List<Strategy> getStrategiesToTest() {
         List<Strategy> strategies = new ArrayList<>();
+        // top strats
+/**
+        1.36	Strategy{ 1 C 30.0 60 null 2 P 30.0 60 -2 P 0.0 30 }	CUSTOM
+        1.25	Strategy{ 6 C 20.0 300 -1 C 80.0 7 null null ROLL_SAME_DELTA}	RATIO_DIAGONAL
+        1.23	Strategy{ 1 C 20.0 60 -1 C 0.0 30 1 P 20.0 60 -1 P 0.0 30 }	DOUBLE_CALENDAR
+**/
+
+
+        //RATIO_DIAGONAL
+        strategyType = Strategy.StrategyType.RATIO_DIAGONAL;
 
         strategies.add(getStrategy(new Leg(1, 70, 400), new Leg(-1, 30, 21), null, null, Strategy.RollingStrategy.ROLL_SAME_DELTA));
 
@@ -24,69 +36,33 @@ public class StrategyTester {
         strategies.add(getStrategy(new Leg(6, 20, 300), new Leg(-1, 80, 7)));
         strategies.add(getStrategy(new Leg(6, 20, 300), new Leg(-1, 80, 7), null, null, Strategy.RollingStrategy.ROLL_SAME_DELTA));
 
+        strategies.add(getStrategy(new Leg(4, 80, 120), new Leg(-3, 85, 14), null, null));
+        strategies.add(getStrategy(new Leg(4, 80, 400), new Leg(-3, 85, 60), null, null));
 
-/**
-        strategies.add(getStrategy(new Leg(4, 30, 300), new Leg(-1, 80, 7)));
-        strategies.add(getStrategy(new Leg(4, 30, 300), new Leg(-1, 80, 14)));
+        //CALENDAR
+        strategyType = Strategy.StrategyType.CALENDAR;
 
-        strategies.add(getStrategy(new Leg(6, 20, 300), new Leg(-1, 80, 7)));
-        strategies.add(getStrategy(new Leg(6, 20, 300), new Leg(-1, 80, 14)));
-**/
+        strategies.add(getStrategy(new Leg(1, 50, 30), new Leg(-1, 0, 7), null, null, Strategy.RollingStrategy.NONE));
+        strategies.add(getStrategy(new Leg(1, 30, 60), new Leg(-1, 0, 15), null, null, Strategy.RollingStrategy.NONE));
 
-        /**
-        strategies.add(getStrategy(new Leg(6, 20, 300), new Leg(-1, 80, 7)));
-        strategies.add(getStrategy(new Leg(4, 30, 300), new Leg(-1, 80, 7)));
-        strategies.add(getStrategy(new Leg(6, 20, 300), new Leg(-1, 80, 7), null, null, Strategy.RollingStrategy.ROLL_SAME_DELTA));
-        strategies.add(getStrategy(new Leg(4, 30, 300), new Leg(-1, 80, 7), null, null, Strategy.RollingStrategy.ROLL_SAME_DELTA));
+        //STRADDLE
+        strategyType = Strategy.StrategyType.STRADDLE;
 
-        strategies.add(getStrategy(new Leg(6, 20, 300), new Leg(-1, 80, 15)));
-        strategies.add(getStrategy(new Leg(4, 30, 300), new Leg(-1, 80, 15)));
-         **/
-
-        //Ratio diagonals
-/**
-        strategies.add(getStrategy(new Leg(6, 20, 400), new Leg(-1, 80, 7)));
-        strategies.add(getStrategy(new Leg(4, 30, 400), new Leg(-1, 80, 7)));
-
-        strategies.add(getStrategy(new Leg(6, 20, 300), new Leg(-1, 80, 7)));
-        strategies.add(getStrategy(new Leg(4, 30, 300), new Leg(-1, 80, 7)));
-        strategies.add(getStrategy(new Leg(6, 20, 300), new Leg(-1, 80, 7), null, null, Strategy.RollingStrategy.ROLL_SAME_DELTA));
-        strategies.add(getStrategy(new Leg(4, 30, 300), new Leg(-1, 80, 7), null, null, Strategy.RollingStrategy.ROLL_SAME_DELTA));
-
-        strategies.add(getStrategy(new Leg(6, 20, 200), new Leg(-1, 80, 7)));
-        strategies.add(getStrategy(new Leg(4, 30, 200), new Leg(-1, 80, 7)));
-        strategies.add(getStrategy(new Leg(2, 60, 200), new Leg(-1, 80, 7)));
-
-        strategies.add(getStrategy(new Leg(4, 30, 100), new Leg(-1, 80, 7)));
-**/
-//        strategies.add(getStrategy(new Leg(4, 80, 400), new Leg(-3, 85, 60)));
-
-
-/**
-        //straddle
         strategies.add(getStrategy(new Leg(-1, 50, 7), new Leg(-1, 50, 7, OptionV2.OptionType.put)));
-        strategies.add(getStrategy(new Leg(-1, 50, 10), new Leg(-1, 50, 10, OptionV2.OptionType.put)));
         strategies.add(getStrategy(new Leg(-1, 50, 15), new Leg(-1, 50, 15, OptionV2.OptionType.put)));
+        //DOUBLE_CALENDAR
+        strategyType = Strategy.StrategyType.DOUBLE_CALENDAR;
+        strategies.add(getStrategy(new Leg(1, 20, 60), new Leg(-1, 0, 30), new Leg(1, 20, 60, OptionV2.OptionType.put), new Leg(-1, 0, 30, OptionV2.OptionType.put), Strategy.RollingStrategy.NONE));
+        strategies.add(getStrategy(new Leg(1, 30, 60), new Leg(-1, 0, 30), new Leg(1, 30, 60, OptionV2.OptionType.put), new Leg(-1, 0, 30, OptionV2.OptionType.put), Strategy.RollingStrategy.NONE));
+        strategies.add(getStrategy(new Leg(1, 30, 60), new Leg(-1, 0, 15), new Leg(1, 30, 60, OptionV2.OptionType.put), new Leg(-1, 0, 15, OptionV2.OptionType.put), Strategy.RollingStrategy.NONE));
+        strategies.add(getStrategy(new Leg(1, 20, 60), new Leg(-1, 0, 15), new Leg(1, 20, 60, OptionV2.OptionType.put), new Leg(-1, 0, 15, OptionV2.OptionType.put), Strategy.RollingStrategy.NONE));
 
-        strategies.add(getStrategy(new Leg(-1, 70, 10), new Leg(-1, 30, 10, OptionV2.OptionType.put), new Leg(-1, 30, 10), new Leg(-1, 70, 10, OptionV2.OptionType.put)));
+        //CUSTOM
+        strategyType = Strategy.StrategyType.CUSTOM;
+        strategies.add(getStrategy(new Leg(1, 30, 60), null, new Leg(2, 30, 60, OptionV2.OptionType.put), new Leg(-2, 0, 30, OptionV2.OptionType.put), Strategy.RollingStrategy.NONE));
+        strategies.add(getStrategy(new Leg(1, 50, 60), null, new Leg(2, 30, 60, OptionV2.OptionType.put), new Leg(-2, 0, 30, OptionV2.OptionType.put), Strategy.RollingStrategy.NONE));
+        strategies.add(getStrategy(new Leg(1, 50, 60), null, new Leg(3, 30, 60, OptionV2.OptionType.put), new Leg(-3, 0, 30, OptionV2.OptionType.put), Strategy.RollingStrategy.NONE));
 
-        //calendars
-        strategies.add(getStrategy(new Leg(1, 50, 30), new Leg(-1, 0, 3)));
-        strategies.add(getStrategy(new Leg(1, 50, 30), new Leg(-1, 0, 6)));
-        strategies.add(getStrategy(new Leg(1, 40, 30), new Leg(-1, 0, 3)));
-        strategies.add(getStrategy(new Leg(1, 40, 30), new Leg(-1, 0, 6)));
-        strategies.add(getStrategy(new Leg(1, 40, 30), new Leg(-1, 0, 6)));
-
-        strategies.add(getStrategy(new Leg(1, 30, 60), new Leg(-1, 0, 30)));
-        strategies.add(getStrategy(new Leg(1, 30, 60), new Leg(-1, 0, 15)));
-        //double calendar
-        strategies.add(getStrategy(new Leg(1, 30, 60), new Leg(-1, 0, 15), new Leg(1, 30, 60, OptionV2.OptionType.put), new Leg(-1, 0, 15, OptionV2.OptionType.put)));
-        //custom
-        strategies.add(getStrategy(new Leg(1, 30, 30), new Leg(1, 30, 30, OptionV2.OptionType.put), new Leg(-1, 0, 7, OptionV2.OptionType.put)));
-        strategies.add(getStrategy(new Leg(1, 30, 60), new Leg(1, 30, 60, OptionV2.OptionType.put), new Leg(-1, 0, 15, OptionV2.OptionType.put)));
-
-        //        strategies.add(getStrategy(new Leg(1, 50, 60), new Leg(-1, 0, 30)));
- **/
         return strategies;
     }
 
@@ -103,13 +79,7 @@ public class StrategyTester {
     }
 
     private Strategy getStrategy(Leg leg1, Leg leg2, Leg leg3, Leg leg4) {
-        String leg1string = leg1.toString();
-
-        String leg2string = leg2 != null ? leg2.toString() : null;
-        String leg3string = leg3 != null ? leg3.toString() : null;
-        String leg4string = leg4 != null ? leg4.toString() : null;
-
-        return new Strategy(leg1string + " " + leg2string + " " + leg3string + " " + leg4string, "", leg1string, leg2string, leg3string, leg4string);
+        return getStrategy(leg1, leg2, leg3, leg4, null);
     }
 
     private Strategy getStrategy(Leg leg1, Leg leg2, Leg leg3, Leg leg4, Strategy.RollingStrategy rollingStrategy) {
@@ -121,7 +91,13 @@ public class StrategyTester {
 
         Strategy strategy = new Strategy(leg1string + " " + leg2string + " " + leg3string + " " + leg4string, "", leg1string, leg2string, leg3string, leg4string);
 
-        strategy.setRollingStrategy(rollingStrategy);
+        if (rollingStrategy != null) {
+            strategy.setRollingStrategy(rollingStrategy);
+        }
+
+        if (strategyType != null) {
+            strategy.setStrategyType(strategyType);
+        }
 
         return strategy;
     }

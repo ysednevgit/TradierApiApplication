@@ -12,9 +12,9 @@ public class Strategy {
 
     private String description;
 
-    private boolean shouldRoll = true;
-
     private RollingStrategy rollingStrategy = RollingStrategy.ROLL_SAME_STRIKE;
+
+    private StrategyType strategyType = StrategyType.CUSTOM;
 
     //list of 1 C 20 300  - means buy 1 call 20 delta with 300 days out
     private List<String> legs = new ArrayList<>();
@@ -45,8 +45,16 @@ public class Strategy {
 
     public enum RollingStrategy {
         ROLL_SAME_STRIKE,
-        ROLL_SAME_DELTA
+        ROLL_SAME_DELTA,
+        NONE
     }
+
+    public enum StrategyType {
+        RATIO_DIAGONAL,
+        CALENDAR,
+        DOUBLE_CALENDAR,
+        STRADDLE,
+        CUSTOM
+    }
+
 }
-
-

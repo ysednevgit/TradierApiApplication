@@ -1,14 +1,9 @@
 package com.yury.trade.delegate;
 
-import com.yury.trade.entity.OptionV2;
-import com.yury.trade.entity.StockHistory;
-import com.yury.trade.entity.StrategyPerformance;
-import com.yury.trade.entity.StrategyPerformanceId;
+import com.yury.trade.entity.*;
 import com.yury.trade.util.Position;
 import com.yury.trade.util.Strategy;
-import com.yury.trade.util.StrategyHistory;
 import com.yury.trade.util.StrategyTester;
-import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.math3.util.Precision;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -28,33 +23,40 @@ public class StatsDelegate {
 
     private static DecimalFormat df2 = new DecimalFormat("###.##");
 
-    private List<StrategyPerformance> strategyPerformances = new ArrayList<>();
+    private Map<StrategyPerformanceId, StrategyPerformance> strategyPerformanceMap = new LinkedHashMap<>();
+    private Map<StrategyPerformanceId, StrategyPerformanceData> strategyPerformanceDataMap = new LinkedHashMap<>();
 
-    public void getStats(boolean createHistory) throws ParseException {
+    public void getStats(String symbol) throws ParseException {
 
-        strategyPerformances.clear();
+        strategyPerformanceMap.clear();
+        strategyPerformanceDataMap.clear();
 
         Date startDate = sdf.parse("2022-07-25");
 
-        List<String> stockSymbols = persistenceDelegate.getOptionRepository().findRootSymbols(startDate);
+        List<String> stockSymbols = new ArrayList<>();
+
+        if (symbol != null) {
+            stockSymbols.add(symbol);
+        } else {
+            stockSymbols = persistenceDelegate.getOptionRepository().findRootSymbols(startDate);
+        }
 
         for (String stockSymbol : stockSymbols) {
 
-            getStats(createHistory, stockSymbol, startDate);
+            getStats(stockSymbol, startDate);
         }
 
-        persistenceDelegate.getStrategyPerformanceRepository().saveAll(strategyPerformances);
+        persistenceDelegate.getStrategyPerformanceRepository().saveAll(strategyPerformanceMap.values());
+        persistenceDelegate.getStrategyPerformanceDataRepository().saveAll(strategyPerformanceDataMap.values());
 
         System.out.println("Get stats End.");
     }
 
-    private void getStats(boolean createHistory, String stockSymbol, Date startDate) {
+    private void getStats(String stockSymbol, Date startDate) {
 
         List<OptionV2> allOptions = persistenceDelegate.getOptionRepository().findByUnderlyingAndGreeks_updated_at(stockSymbol, startDate);
 
         Map<Date, Double> stockHistoryMap = getStockHistoryMap(stockSymbol);
-
-        List<StrategyHistory> strategyHistories = new ArrayList<>();
 
         List<Strategy> strategies = new StrategyTester().getStrategiesToTest();
 
@@ -91,8 +93,6 @@ public class StatsDelegate {
 
             Date stepDate;
 
-            StrategyHistory strategyHistory = new StrategyHistory(strategy);
-
             for (int i = 0; i < maxOptionsAmount; i++) {
 
                 stepDate = legOptionsList.get(0).get(i).getGreeks_updated_at();
@@ -105,8 +105,8 @@ public class StatsDelegate {
                     if (legOptionsList_j.size() == i) {
 
                         //Rolling to next option
-                        if (!strategy.isShouldRoll()) {
-                            continue;
+                        if (Strategy.RollingStrategy.NONE.equals(strategy.getRollingStrategy())) {
+                            break;
                         }
 
                         rollPosition(position, strategy, legOptionsList_j, i, j);
@@ -115,12 +115,17 @@ public class StatsDelegate {
                     if (legOptionsList_j.size() <= i) {
                         continue;
                     }
+
+                    //adding check for bad data
+                    if (legOptionsList_j.get(i).getMid_price() == 0) {
+                        continue;
+                    }
                 }
 
                 boolean positionAddSuccessful = position.add(legOptionsList, i);
 
                 if (!positionAddSuccessful) {
-                    return;
+                    continue;
                 }
 
                 System.out.print(sdf.format(stepDate) + " ");
@@ -161,18 +166,23 @@ public class StatsDelegate {
                 strategyPerformance.setDaysRun(position.daysRun);
                 strategyPerformance.setStockLatest(stockPrice);
                 strategyPerformance.setStockChange(Precision.round(stockPrice / initialStockPrice, 2));
+                strategyPerformance.setStrategyType(strategy.getStrategyType().name());
+                strategyPerformance.setIndex(new Date().getTime());
 
-                strategyPerformances.add(strategyPerformance);
+                strategyPerformanceMap.put(strategyPerformanceId, strategyPerformance);
 
-                if (createHistory) {
-                    Position positionCopy = SerializationUtils.clone(position);
-                    positionCopy.options.clear();
-                    strategyHistory.addData(stepDate, positionCopy);
+                if (strategyPerformanceDataMap.containsKey(strategyPerformanceId)) {
+                    StrategyPerformanceData strategyPerformanceData = strategyPerformanceDataMap.get(strategyPerformanceId);
+                    strategyPerformanceData.addData(sdf.format(stepDate) + " " + position + " " + changeStr);
+                } else {
+                    StrategyPerformanceData strategyPerformanceData = new StrategyPerformanceData();
+                    strategyPerformanceData.setId(strategyPerformance.getIndex());
+                    strategyPerformanceData.addData(strategy.toString());
+                    strategyPerformanceDataMap.put(strategyPerformanceId, strategyPerformanceData);
                 }
             }
             System.out.println();
 
-            strategyHistories.add(strategyHistory);
         }
     }
 

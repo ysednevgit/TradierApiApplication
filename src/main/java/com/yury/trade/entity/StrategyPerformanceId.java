@@ -18,4 +18,8 @@ public class StrategyPerformanceId implements Serializable {
 
     private String strategyDescription;//Strategy{ 4 C 30.0 300 -1 C 80.0 7 null null }
 
+    @Override
+    public String toString() {
+        return symbol + " " + startDate + " " + strategyDescription;
+    }
 }

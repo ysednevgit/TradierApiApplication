@@ -23,6 +23,7 @@ public class StrategyPerformance {
 
     private int daysRun;
 
+    private String strategyType;
 
-
+    private long index;
 }
