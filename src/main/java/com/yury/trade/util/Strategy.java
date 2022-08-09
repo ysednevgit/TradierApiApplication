@@ -14,6 +14,8 @@ public class Strategy {
 
     private RollingStrategy rollingStrategy = RollingStrategy.ROLL_SAME_STRIKE;
 
+    private ExitStrategy exitStrategy = ExitStrategy.SHORT_STRIKE_EXPIRED;;
+
     private StrategyType strategyType = StrategyType.CUSTOM;
 
     //list of 1 C 20 300  - means buy 1 call 20 delta with 300 days out
@@ -47,6 +49,12 @@ public class Strategy {
         ROLL_SAME_STRIKE,
         ROLL_SAME_DELTA,
         NONE
+    }
+
+    public enum ExitStrategy {
+        NONE,//never exit
+        SHORT_STRIKE_EXPIRED,//default
+        SHORT_STRIKE_EXPIRED_ITM//exit if short strike expired in the money
     }
 
     public enum StrategyType {

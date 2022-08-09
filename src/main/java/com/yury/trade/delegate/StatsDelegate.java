@@ -4,6 +4,7 @@ import com.yury.trade.entity.*;
 import com.yury.trade.util.Position;
 import com.yury.trade.util.Strategy;
 import com.yury.trade.util.StrategyTester;
+import com.yury.trade.util.SymbolWithDate;
 import org.apache.commons.math3.util.Precision;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -26,33 +27,29 @@ public class StatsDelegate {
     private Map<StrategyPerformanceId, StrategyPerformance> strategyPerformanceMap = new LinkedHashMap<>();
     private Map<StrategyPerformanceId, StrategyPerformanceData> strategyPerformanceDataMap = new LinkedHashMap<>();
 
-    public void getStats(String symbol) throws ParseException {
+    public synchronized void getStats() throws Exception {
 
         strategyPerformanceMap.clear();
         strategyPerformanceDataMap.clear();
 
-        Date startDate = sdf.parse("2022-07-25");
+        List<SymbolWithDate> symbolsWithMinDates = persistenceDelegate.getOptionRepository().findRootSymbolsWithMinDates();
 
-        List<String> stockSymbols = new ArrayList<>();
-
-        if (symbol != null) {
-            stockSymbols.add(symbol);
-        } else {
-            stockSymbols = persistenceDelegate.getOptionRepository().findRootSymbols(startDate);
-        }
-
-        for (String stockSymbol : stockSymbols) {
-
-            getStats(stockSymbol, startDate);
+        for (SymbolWithDate symbolWithDate : symbolsWithMinDates) {
+            getStats(symbolWithDate.getSymbol(), symbolWithDate.getDate());
         }
 
         persistenceDelegate.getStrategyPerformanceRepository().saveAll(strategyPerformanceMap.values());
+        System.out.println("Saved to StrategyPerformance " + strategyPerformanceMap.values().size());
+
         persistenceDelegate.getStrategyPerformanceDataRepository().saveAll(strategyPerformanceDataMap.values());
+        System.out.println("Saved to StrategyPerformanceData " + strategyPerformanceDataMap.values().size());
 
         System.out.println("Get stats End.");
     }
 
-    private void getStats(String stockSymbol, Date startDate) {
+    private void getStats(String stockSymbol, Date startDate) throws InterruptedException {
+
+        System.out.println("Get stats: " + stockSymbol + " " + startDate);
 
         List<OptionV2> allOptions = persistenceDelegate.getOptionRepository().findByUnderlyingAndGreeks_updated_at(stockSymbol, startDate);
 
@@ -117,7 +114,7 @@ public class StatsDelegate {
                     }
 
                     //adding check for bad data
-                    if (legOptionsList_j.get(i).getMid_price() == 0) {
+                    if (legOptionsList_j.get(i).getMid_price() == null || legOptionsList_j.get(i).getMid_price() == 0) {
                         continue;
                     }
                 }
@@ -168,18 +165,21 @@ public class StatsDelegate {
                 strategyPerformance.setStockChange(Precision.round(stockPrice / initialStockPrice, 2));
                 strategyPerformance.setStrategyType(strategy.getStrategyType().name());
                 strategyPerformance.setIndex(new Date().getTime());
+                Thread.sleep(1);
 
                 strategyPerformanceMap.put(strategyPerformanceId, strategyPerformance);
+                StrategyPerformanceData strategyPerformanceData;
 
                 if (strategyPerformanceDataMap.containsKey(strategyPerformanceId)) {
-                    StrategyPerformanceData strategyPerformanceData = strategyPerformanceDataMap.get(strategyPerformanceId);
+                    strategyPerformanceData = strategyPerformanceDataMap.get(strategyPerformanceId);
                     strategyPerformanceData.addData(sdf.format(stepDate) + " " + position + " " + changeStr);
                 } else {
-                    StrategyPerformanceData strategyPerformanceData = new StrategyPerformanceData();
-                    strategyPerformanceData.setId(strategyPerformance.getIndex());
-                    strategyPerformanceData.addData(strategy.toString());
+                    strategyPerformanceData = new StrategyPerformanceData();
+                                        strategyPerformanceData.addData(strategy.toString());
                     strategyPerformanceDataMap.put(strategyPerformanceId, strategyPerformanceData);
                 }
+                strategyPerformanceData.setId(strategyPerformance.getIndex());
+
             }
             System.out.println();
 

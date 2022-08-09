@@ -2,6 +2,7 @@ package com.yury.trade.repository;
 
 import com.yury.trade.entity.OptionV2;
 import com.yury.trade.entity.OptionV2Id;
+import com.yury.trade.util.SymbolWithDate;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
@@ -35,8 +36,10 @@ public interface OptionRepository extends CrudRepository<OptionV2, OptionV2Id> {
     @Query("SELECT s FROM OptionV2 s WHERE underlying = ?1 and greeks_updated_at = ?2 and expiration_date = ?3")
     List<OptionV2> findNext(String underlying, Date greeks_updated_at, Date expirationDate);
 
+    @Query(value = "SELECT MIN(greeks_updated_at) as date, root_symbol as symbol  FROM OPTIONV2 GROUP BY root_symbol ORDER BY root_symbol", nativeQuery = true)
+    List<SymbolWithDate> findRootSymbolsWithMinDates();
 
-//    @Query("SELECT s FROM OptionV2 s WHERE underlying = ?1 and delta = ?2 and greeks_updated_at = ?3")
+    //    @Query("SELECT s FROM OptionV2 s WHERE underlying = ?1 and delta = ?2 and greeks_updated_at = ?3")
 //    List<OptionV2> findByUnderlyingAndDeltaAndGreeks_updated_at(String underlying, Double delta, Date minGreeks_updated_at);
 
 }

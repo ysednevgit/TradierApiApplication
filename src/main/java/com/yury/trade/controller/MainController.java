@@ -32,9 +32,9 @@ public class MainController {
     private StatsDelegate statsDelegate;
 
     @GetMapping("/get_stats")
-    public String getStats(@RequestParam(value = "createHistory", required = false, defaultValue = "false") boolean createHistory, @RequestParam(value = "symbol", required = false) String symbol) throws ParseException {
+    public String getStats(@RequestParam(value = "createHistory", required = false, defaultValue = "false") boolean createHistory) throws Exception {
 
-        statsDelegate.getStats(symbol);
+        statsDelegate.getStats();
 
         return "Success";
     }

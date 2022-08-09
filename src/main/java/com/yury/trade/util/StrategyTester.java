@@ -18,7 +18,6 @@ public class StrategyTester {
         1.23	Strategy{ 1 C 20.0 60 -1 C 0.0 30 1 P 20.0 60 -1 P 0.0 30 }	DOUBLE_CALENDAR
 **/
 
-
         //RATIO_DIAGONAL
         strategyType = Strategy.StrategyType.RATIO_DIAGONAL;
 
@@ -47,9 +46,9 @@ public class StrategyTester {
 
         //STRADDLE
         strategyType = Strategy.StrategyType.STRADDLE;
-
         strategies.add(getStrategy(new Leg(-1, 50, 7), new Leg(-1, 50, 7, OptionV2.OptionType.put)));
         strategies.add(getStrategy(new Leg(-1, 50, 15), new Leg(-1, 50, 15, OptionV2.OptionType.put)));
+
         //DOUBLE_CALENDAR
         strategyType = Strategy.StrategyType.DOUBLE_CALENDAR;
         strategies.add(getStrategy(new Leg(1, 20, 60), new Leg(-1, 0, 30), new Leg(1, 20, 60, OptionV2.OptionType.put), new Leg(-1, 0, 30, OptionV2.OptionType.put), Strategy.RollingStrategy.NONE));
@@ -62,6 +61,9 @@ public class StrategyTester {
         strategies.add(getStrategy(new Leg(1, 30, 60), null, new Leg(2, 30, 60, OptionV2.OptionType.put), new Leg(-2, 0, 30, OptionV2.OptionType.put), Strategy.RollingStrategy.NONE));
         strategies.add(getStrategy(new Leg(1, 50, 60), null, new Leg(2, 30, 60, OptionV2.OptionType.put), new Leg(-2, 0, 30, OptionV2.OptionType.put), Strategy.RollingStrategy.NONE));
         strategies.add(getStrategy(new Leg(1, 50, 60), null, new Leg(3, 30, 60, OptionV2.OptionType.put), new Leg(-3, 0, 30, OptionV2.OptionType.put), Strategy.RollingStrategy.NONE));
+        strategies.add(getStrategy(new Leg(1, 70, 60), null, new Leg(2, 30, 60, OptionV2.OptionType.put), new Leg(-2, 0, 30, OptionV2.OptionType.put), Strategy.RollingStrategy.NONE));
+        strategies.add(getStrategy(new Leg(1, 70, 60), null, new Leg(3, 30, 60, OptionV2.OptionType.put), new Leg(-3, 0, 30, OptionV2.OptionType.put), Strategy.RollingStrategy.NONE));
+
 
         return strategies;
     }
@@ -83,6 +85,10 @@ public class StrategyTester {
     }
 
     private Strategy getStrategy(Leg leg1, Leg leg2, Leg leg3, Leg leg4, Strategy.RollingStrategy rollingStrategy) {
+        return getStrategy(leg1, leg2, leg3, leg4, rollingStrategy, null);
+    }
+
+    private Strategy getStrategy(Leg leg1, Leg leg2, Leg leg3, Leg leg4, Strategy.RollingStrategy rollingStrategy, Strategy.ExitStrategy exitStrategy) {
         String leg1string = leg1.toString();
 
         String leg2string = leg2 != null ? leg2.toString() : null;
@@ -93,6 +99,10 @@ public class StrategyTester {
 
         if (rollingStrategy != null) {
             strategy.setRollingStrategy(rollingStrategy);
+        }
+
+        if (exitStrategy != null) {
+            strategy.setExitStrategy(exitStrategy);
         }
 
         if (strategyType != null) {
