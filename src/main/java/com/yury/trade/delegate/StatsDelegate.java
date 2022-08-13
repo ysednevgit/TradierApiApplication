@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.text.DecimalFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -27,15 +26,36 @@ public class StatsDelegate {
     private Map<StrategyPerformanceId, StrategyPerformance> strategyPerformanceMap = new LinkedHashMap<>();
     private Map<StrategyPerformanceId, StrategyPerformanceData> strategyPerformanceDataMap = new LinkedHashMap<>();
 
-    public synchronized void getStats() throws Exception {
+
+    public synchronized void getStats(boolean runFullReport) throws Exception {
 
         strategyPerformanceMap.clear();
         strategyPerformanceDataMap.clear();
 
         List<SymbolWithDate> symbolsWithMinDates = persistenceDelegate.getOptionRepository().findRootSymbolsWithMinDates();
 
+        int distanceDays = 7;
+        Date currentDate = new Date();
+
+        Calendar calendar = Calendar.getInstance();
+
         for (SymbolWithDate symbolWithDate : symbolsWithMinDates) {
-            getStats(symbolWithDate.getSymbol(), symbolWithDate.getDate());
+
+            String symbol = symbolWithDate.getSymbol();
+
+            getStats(symbol, symbolWithDate.getDate());
+
+            if (runFullReport) {
+
+                calendar.setTime(symbolWithDate.getDate());
+                calendar.add(Calendar.DAY_OF_MONTH, distanceDays);
+
+                while (calendar.getTime().before(currentDate)) {
+                    getStats(symbol, calendar.getTime());
+                    calendar.add(Calendar.DAY_OF_MONTH, distanceDays);
+                }
+
+            }
         }
 
         persistenceDelegate.getStrategyPerformanceRepository().saveAll(strategyPerformanceMap.values());
@@ -56,6 +76,7 @@ public class StatsDelegate {
         Map<Date, Double> stockHistoryMap = getStockHistoryMap(stockSymbol);
 
         List<Strategy> strategies = new StrategyTester().getStrategiesToTest();
+//        List<Strategy> strategies = new StrategyTester().getTestStrategiesToTest();
 
         for (Strategy strategy : strategies) {
             System.out.println("Strategy: " + strategy);
@@ -67,6 +88,8 @@ public class StatsDelegate {
             int maxOptionsAmount = 0;
             double maxDrawDown = 0;
             int maxDrawDownValue = 0;
+
+            double thetaTotal = 0;
 
             List<OptionV2> firstStepOptions = new ArrayList<>();
 
@@ -127,15 +150,21 @@ public class StatsDelegate {
 
                 System.out.print(sdf.format(stepDate) + " ");
 
-                if (i == 0) {
+                if (initialStockPrice == 0) {
                     initialPrice = position.positionPrice;
                     initialStockPrice = stockHistoryMap.get(stepDate);
                 } else {
+                    if (initialPrice == 0) {
+                        //usually means bought and sold same options
+                        break;
+                    }
                     change = (position.positionPrice - position.adjustments / position.contractSize) / initialPrice;
                 }
 
                 double stockPrice = stockHistoryMap.get(stepDate);
                 double changeValue = (position.positionPrice - initialPrice) * position.contractSize - position.adjustments;
+
+                thetaTotal += position.positionTheta * position.contractSize;
 
                 if (changeValue < maxDrawDownValue) {
                     maxDrawDownValue = (int) changeValue;
@@ -149,41 +178,76 @@ public class StatsDelegate {
 
                 System.out.println(changeStr);
 
-                StrategyPerformance strategyPerformance = new StrategyPerformance();
-                StrategyPerformanceId strategyPerformanceId = new StrategyPerformanceId();
-                strategyPerformance.setStrategyPerformanceId(strategyPerformanceId);
+                StrategyPerformance strategyPerformance = createStrategyPerformance(strategy, stockSymbol, startDate, change, changeValue, maxDrawDown, maxDrawDownValue, position, stockPrice, initialStockPrice, thetaTotal);
 
-                strategyPerformanceId.setSymbol(stockSymbol);
-                strategyPerformanceId.setStartDate(startDate);
-                strategyPerformanceId.setStrategyDescription(strategy.toString());
-                strategyPerformance.setChange(Precision.round(change, 2));
-                strategyPerformance.setChangeValue((int) changeValue);
-                strategyPerformance.setMaxDrawDown(Precision.round(maxDrawDown, 2));
-                strategyPerformance.setMaxDrawDownValue(maxDrawDownValue);
-                strategyPerformance.setDaysRun(position.daysRun);
-                strategyPerformance.setStockLatest(stockPrice);
-                strategyPerformance.setStockChange(Precision.round(stockPrice / initialStockPrice, 2));
-                strategyPerformance.setStrategyType(strategy.getStrategyType().name());
-                strategyPerformance.setIndex(new Date().getTime());
-                Thread.sleep(1);
-
-                strategyPerformanceMap.put(strategyPerformanceId, strategyPerformance);
-                StrategyPerformanceData strategyPerformanceData;
-
-                if (strategyPerformanceDataMap.containsKey(strategyPerformanceId)) {
-                    strategyPerformanceData = strategyPerformanceDataMap.get(strategyPerformanceId);
-                    strategyPerformanceData.addData(sdf.format(stepDate) + " " + position + " " + changeStr);
-                } else {
-                    strategyPerformanceData = new StrategyPerformanceData();
-                                        strategyPerformanceData.addData(strategy.toString());
-                    strategyPerformanceDataMap.put(strategyPerformanceId, strategyPerformanceData);
-                }
-                strategyPerformanceData.setId(strategyPerformance.getIndex());
-
+                addToStrategyPerformanceMap(strategyPerformance, stepDate, position, changeStr, strategy);
             }
             System.out.println();
-
         }
+    }
+
+    private void addToStrategyPerformanceMap(StrategyPerformance strategyPerformance, Date stepDate, Position position, String changeStr, Strategy strategy) {
+        StrategyPerformanceId strategyPerformanceId = strategyPerformance.getStrategyPerformanceId();
+
+        strategyPerformanceMap.put(strategyPerformanceId, strategyPerformance);
+        StrategyPerformanceData strategyPerformanceData;
+
+        if (strategyPerformanceDataMap.containsKey(strategyPerformanceId)) {
+            strategyPerformanceData = strategyPerformanceDataMap.get(strategyPerformanceId);
+            strategyPerformanceData.addData(sdf.format(stepDate) + " " + position + " " + changeStr);
+        } else {
+            strategyPerformanceData = new StrategyPerformanceData();
+            strategyPerformanceData.addData(strategy.toString());
+            strategyPerformanceDataMap.put(strategyPerformanceId, strategyPerformanceData);
+        }
+        strategyPerformanceData.setId(strategyPerformance.getIndex());
+    }
+
+    private StrategyPerformance createStrategyPerformance(
+            Strategy strategy,
+            String stockSymbol,
+            Date startDate,
+            Double change,
+            double changeValue,
+            Double maxDrawDown,
+            Integer maxDrawDownValue,
+            Position position,
+            double stockPrice,
+            double initialStockPrice,
+            double thetaTotal) throws InterruptedException {
+
+        StrategyPerformance strategyPerformance = new StrategyPerformance();
+        StrategyPerformanceId strategyPerformanceId = new StrategyPerformanceId();
+        strategyPerformance.setStrategyPerformanceId(strategyPerformanceId);
+
+        strategyPerformanceId.setSymbol(stockSymbol);
+        strategyPerformanceId.setStartDate(startDate);
+        strategyPerformanceId.setStrategyDescription(strategy.toString());
+        strategyPerformance.setChange(Precision.round(change, 2));
+        strategyPerformance.setChangeValue((int) changeValue);
+
+        strategyPerformance.setThetaTotal(Precision.round(thetaTotal, 2));
+
+        if (position.positionTheta != 0) {
+            double thetaToPricePct = position.positionTheta * position.contractSize / position.positionPrice;
+            strategyPerformance.setThetaToPricePct(Precision.round(thetaToPricePct, 2));
+        }
+
+        if (strategyPerformance.getThetaTotal() != 0) {
+            double thetaTotalToPricePct = strategyPerformance.getThetaTotal() / position.positionPrice;
+            strategyPerformance.setThetaTotalToPricePct(Precision.round(thetaTotalToPricePct, 2));
+        }
+
+        strategyPerformance.setMaxDrawDown(Precision.round(maxDrawDown, 2));
+        strategyPerformance.setMaxDrawDownValue(maxDrawDownValue);
+        strategyPerformance.setDaysRun(position.daysRun);
+        strategyPerformance.setStockLatest(stockPrice);
+        strategyPerformance.setStockChange(Precision.round(stockPrice / initialStockPrice, 2));
+        strategyPerformance.setStrategyType(strategy.getStrategyType().name());
+        strategyPerformance.setIndex(new Date().getTime());
+        Thread.sleep(1);
+
+        return strategyPerformance;
     }
 
     private boolean rollPosition(final Position position, final Strategy strategy, List<OptionV2> legOptionsList_j, int i, int j) {

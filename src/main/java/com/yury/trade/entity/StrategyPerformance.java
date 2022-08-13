@@ -15,6 +15,10 @@ public class StrategyPerformance {
     private Double change;
     private Integer changeValue;
 
+    private Double thetaToPricePct;
+    private Double thetaTotalToPricePct;
+    private double thetaTotal;
+
     private Double maxDrawDown;
     private Integer maxDrawDownValue;
 

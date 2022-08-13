@@ -19,9 +19,9 @@ public class Position implements Serializable {
 
     public int contractSize = 100;
 
-    double positionDelta = 0;
-    double positionTheta = 0;
-    double positionGamma = 0;
+    public double positionDelta = 0;
+    public double positionTheta = 0;
+    public double positionGamma = 0;
     public double positionPrice = 0;
     public double adjustments = 0;
 
