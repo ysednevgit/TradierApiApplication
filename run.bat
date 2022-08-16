@@ -1,0 +1,1 @@
+java -jar target/trade-0.0.1-SNAPSHOT.jar

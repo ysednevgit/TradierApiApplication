@@ -43,6 +43,12 @@ public class StatsDelegate {
 
             String symbol = symbolWithDate.getSymbol();
 
+            /**
+            if (!"QQQ".equals(symbol)) {
+                continue;
+            }
+             **/
+
             getStats(symbol, symbolWithDate.getDate());
 
             if (runFullReport) {
@@ -72,6 +78,10 @@ public class StatsDelegate {
         System.out.println("Get stats: " + stockSymbol + " " + startDate);
 
         List<OptionV2> allOptions = persistenceDelegate.getOptionRepository().findByUnderlyingAndGreeks_updated_at(stockSymbol, startDate);
+
+        if (allOptions.size() == 0) {
+            return;
+        }
 
         Map<Date, Double> stockHistoryMap = getStockHistoryMap(stockSymbol);
 
@@ -129,7 +139,9 @@ public class StatsDelegate {
                             break;
                         }
 
-                        rollPosition(position, strategy, legOptionsList_j, i, j);
+                        if (!rollPosition(position, strategy, legOptionsList_j, i, j)) {
+                            break;
+                        }
                     }
 
                     if (legOptionsList_j.size() <= i) {
@@ -147,8 +159,6 @@ public class StatsDelegate {
                 if (!positionAddSuccessful) {
                     continue;
                 }
-
-                System.out.print(sdf.format(stepDate) + " ");
 
                 if (initialStockPrice == 0) {
                     initialPrice = position.positionPrice;
@@ -171,18 +181,13 @@ public class StatsDelegate {
                     maxDrawDown = maxDrawDownValue / (initialPrice * position.contractSize);
                 }
 
-                System.out.print(position);
-
                 String changeStr = "Change " + df2.format(change) + "(" + df2.format(changeValue) + ")  " +
                         stockSymbol + " " + stockPrice + " change " + df2.format(stockPrice / initialStockPrice);
-
-                System.out.println(changeStr);
 
                 StrategyPerformance strategyPerformance = createStrategyPerformance(strategy, stockSymbol, startDate, change, changeValue, maxDrawDown, maxDrawDownValue, position, stockPrice, initialStockPrice, thetaTotal);
 
                 addToStrategyPerformanceMap(strategyPerformance, stepDate, position, changeStr, strategy);
             }
-            System.out.println();
         }
     }
 
@@ -194,12 +199,13 @@ public class StatsDelegate {
 
         if (strategyPerformanceDataMap.containsKey(strategyPerformanceId)) {
             strategyPerformanceData = strategyPerformanceDataMap.get(strategyPerformanceId);
-            strategyPerformanceData.addData(sdf.format(stepDate) + " " + position + " " + changeStr);
         } else {
             strategyPerformanceData = new StrategyPerformanceData();
             strategyPerformanceData.addData(strategy.toString());
             strategyPerformanceDataMap.put(strategyPerformanceId, strategyPerformanceData);
         }
+        strategyPerformanceData.addData(sdf.format(stepDate) + " " + position + " " + changeStr);
+
         strategyPerformanceData.setId(strategyPerformance.getIndex());
     }
 
@@ -284,9 +290,11 @@ public class StatsDelegate {
             newOption = getNextWithSameDelta(getDelta(leg), originalOption.getOption_type(), getDaysToExpiry(leg), null, options, rollCoeff);
         }
 
-        position.roll(j);
+        if (newOption == null || newOption.getMid_price() == 0) {
+            return false;
+        }
 
-        System.out.println("Rolling to new option " + newOption);
+        position.roll(j);
 
         double priceChange = (newOption.getMid_price() - originalOption.getMid_price()) * originalOption.getContract_size();
 
