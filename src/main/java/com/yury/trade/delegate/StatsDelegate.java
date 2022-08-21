@@ -43,11 +43,11 @@ public class StatsDelegate {
 
             String symbol = symbolWithDate.getSymbol();
 
-            /**
-            if (!"QQQ".equals(symbol)) {
+/**
+            if (!"SPY".equals(symbol)) {
                 continue;
             }
-             **/
+**/
 
             getStats(symbol, symbolWithDate.getDate());
 
@@ -124,6 +124,10 @@ public class StatsDelegate {
             Date stepDate;
 
             for (int i = 0; i < maxOptionsAmount; i++) {
+
+                if (legOptionsList.get(0).size() < maxOptionsAmount) {
+                    break;
+                }
 
                 stepDate = legOptionsList.get(0).get(i).getGreeks_updated_at();
                 position.daysRun++;
@@ -404,7 +408,7 @@ public class StatsDelegate {
                 double resultDeltaDistance = Math.abs(Math.abs(result.getDelta()) - Math.abs(delta));
                 double deltaDistance = Math.abs(Math.abs(optionV2.getDelta()) - Math.abs(delta));
 
-                if ((daysDistance == resultDaysDistance) && (deltaDistance < resultDeltaDistance)) {
+                if ((daysDistance == resultDaysDistance) && (deltaDistance < resultDeltaDistance) && (optionV2.getDays_left() == result.getDays_left())) {
                     result = optionV2;
                 }
             }
