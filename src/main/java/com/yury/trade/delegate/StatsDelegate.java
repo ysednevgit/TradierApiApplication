@@ -1,10 +1,7 @@
 package com.yury.trade.delegate;
 
 import com.yury.trade.entity.*;
-import com.yury.trade.util.Position;
-import com.yury.trade.util.Strategy;
-import com.yury.trade.util.StrategyTester;
-import com.yury.trade.util.SymbolWithDate;
+import com.yury.trade.util.*;
 import org.apache.commons.math3.util.Precision;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -23,44 +20,39 @@ public class StatsDelegate {
 
     private static DecimalFormat df2 = new DecimalFormat("###.##");
 
-    private Map<StrategyPerformanceId, StrategyPerformance> strategyPerformanceMap = new LinkedHashMap<>();
-    private Map<StrategyPerformanceId, StrategyPerformanceData> strategyPerformanceDataMap = new LinkedHashMap<>();
+    private static final int MIN_DAYS_TO_CONTINUE = 5;
 
+    public void getStats(final String symbol, final String startDateString, boolean debug) throws Exception {
 
-    public synchronized void getStats(boolean runFullReport) throws Exception {
+        Map<StrategyPerformanceId, StrategyPerformance> strategyPerformanceMap = new LinkedHashMap<>();
+        Map<StrategyPerformanceId, StrategyPerformanceData> strategyPerformanceDataMap = new LinkedHashMap<>();
 
-        strategyPerformanceMap.clear();
-        strategyPerformanceDataMap.clear();
+        Date startDate = startDateString != null ? sdf.parse(startDateString) : null;
 
         List<SymbolWithDate> symbolsWithMinDates = persistenceDelegate.getOptionRepository().findRootSymbolsWithMinDates();
 
-        int distanceDays = 7;
-        Date currentDate = new Date();
-
-        Calendar calendar = Calendar.getInstance();
+        Map<StrategyPerformanceId, StrategyPerformanceTotal> strategyPerformanceTotalMap = new LinkedHashMap<>();
 
         for (SymbolWithDate symbolWithDate : symbolsWithMinDates) {
 
-            String symbol = symbolWithDate.getSymbol();
-
-/**
-            if (!"SPY".equals(symbol)) {
+            if (symbol != null && !symbol.equals(symbolWithDate.getSymbol())) {
                 continue;
             }
-**/
 
-            getStats(symbol, symbolWithDate.getDate());
+            Date runStartDate = symbolWithDate.getDate();
 
-            if (runFullReport) {
+            if (startDate != null && runStartDate.before(startDate)) {
+                runStartDate = startDate;
+            }
 
-                calendar.setTime(symbolWithDate.getDate());
-                calendar.add(Calendar.DAY_OF_MONTH, distanceDays);
+            for (Strategy strategy : new StrategyTester().getStrategiesToTest()) {
+                StrategyRunData strategyRunData = getStats(null, symbolWithDate.getSymbol(), runStartDate, strategy, debug);
 
-                while (calendar.getTime().before(currentDate)) {
-                    getStats(symbol, calendar.getTime());
-                    calendar.add(Calendar.DAY_OF_MONTH, distanceDays);
-                }
+                StrategyPerformanceTotal strategyPerformanceTotal = createStrategyPerformanceTotal(strategyRunData);
+                strategyPerformanceTotalMap.put(strategyPerformanceTotal.getStrategyPerformanceId(), strategyPerformanceTotal);
 
+                strategyPerformanceMap.putAll(strategyRunData.getStrategyPerformanceMap());
+                strategyPerformanceDataMap.putAll(strategyRunData.getStrategyPerformanceDataMap());
             }
         }
 
@@ -70,147 +62,198 @@ public class StatsDelegate {
         persistenceDelegate.getStrategyPerformanceDataRepository().saveAll(strategyPerformanceDataMap.values());
         System.out.println("Saved to StrategyPerformanceData " + strategyPerformanceDataMap.values().size());
 
+        persistenceDelegate.getStrategyPerformanceTotalRepository().saveAll(strategyPerformanceTotalMap.values());
+        System.out.println("Saved to StrategyPerformanceTotal " + strategyPerformanceTotalMap.values().size());
+
         System.out.println("Get stats End.");
     }
 
-    private void getStats(String stockSymbol, Date startDate) throws InterruptedException {
+    private StrategyRunData getStats(StrategyRunData strategyRunData, String stockSymbol, Date startDate, Strategy strategy, boolean debug) throws InterruptedException {
 
-        System.out.println("Get stats: " + stockSymbol + " " + startDate);
+        System.out.println();
+        System.out.println("Get stats: " + stockSymbol + " " + startDate + " " + "Strategy: " + strategy + " " + strategy.getStrategyType());
 
         List<OptionV2> allOptions = persistenceDelegate.getOptionRepository().findByUnderlyingAndGreeks_updated_at(stockSymbol, startDate);
 
+        if (strategyRunData == null) {
+            strategyRunData = new StrategyRunData();
+            strategyRunData.setStrategy(strategy);
+            strategyRunData.setStartDate(startDate);
+        }
+
         if (allOptions.size() == 0) {
-            return;
+            return strategyRunData;
         }
 
         Map<Date, Double> stockHistoryMap = getStockHistoryMap(stockSymbol);
 
-        List<Strategy> strategies = new StrategyTester().getStrategiesToTest();
-//        List<Strategy> strategies = new StrategyTester().getTestStrategiesToTest();
+        Position position = new Position();
 
-        for (Strategy strategy : strategies) {
-            System.out.println("Strategy: " + strategy);
+        List<List<OptionV2>> legOptionsList = new ArrayList<>();
 
-            Position position = new Position();
+        int maxOptionsAmount = 0;
+        double maxDrawDown = 0;
+        int maxDrawDownValue = 0;
 
-            List<List<OptionV2>> legOptionsList = new ArrayList<>();
+        double thetaTotal = 0;
 
-            int maxOptionsAmount = 0;
-            double maxDrawDown = 0;
-            int maxDrawDownValue = 0;
+        List<OptionV2> firstStepOptions = new ArrayList<>();
 
-            double thetaTotal = 0;
+        for (int i = 0; i < strategy.getLegs().size(); i++) {
 
-            List<OptionV2> firstStepOptions = new ArrayList<>();
+            OptionV2 option = getClosest(strategy.getLegs().get(i), firstStepOptions, allOptions);
 
-            for (int i = 0; i < strategy.getLegs().size(); i++) {
+            firstStepOptions.add(option);
 
-                OptionV2 option = getClosest(strategy.getLegs().get(i), firstStepOptions, allOptions);
+            position.addCoeff(getCoeff(strategy.getLegs().get(i)));
 
-                firstStepOptions.add(option);
+            List<OptionV2> legOptionsList_i = persistenceDelegate.getOptionRepository().findByOptionV2IdSymbolWithGreaterOrSameUpdated(option.getOptionV2Id().getSymbol(), startDate);
+            maxOptionsAmount = Math.max(maxOptionsAmount, legOptionsList_i.size());
 
-                position.addCoeff(getCoeff(strategy.getLegs().get(i)));
+            legOptionsList.add(legOptionsList_i);
+        }
 
-                List<OptionV2> legOptionsList_i = persistenceDelegate.getOptionRepository().findByOptionV2IdSymbolWithGreaterOrSameUpdated(option.getOptionV2Id().getSymbol(), startDate);
-                maxOptionsAmount = Math.max(maxOptionsAmount, legOptionsList_i.size());
+        if (legOptionsList.get(0).size() == 1) {
+            return strategyRunData;
+        }
 
-                legOptionsList.add(legOptionsList_i);
+        double initialPrice = 0;
+        double initialStockPrice = 0;
+        double change = 0;
+
+        Date stepDate = null;
+
+        for (int i = 0; i < maxOptionsAmount; i++) {
+
+            if (legOptionsList.get(0).size() < maxOptionsAmount) {
+                break;
             }
 
-            double initialPrice = 0;
-            double initialStockPrice = 0;
-            double change = 0;
+            stepDate = legOptionsList.get(0).get(i).getGreeks_updated_at();
+            position.daysRun++;
 
-            Date stepDate;
+            boolean shouldBreak = false;
 
-            for (int i = 0; i < maxOptionsAmount; i++) {
+            for (int j = 0; j < legOptionsList.size(); j++) {
 
-                if (legOptionsList.get(0).size() < maxOptionsAmount) {
-                    break;
-                }
+                List<OptionV2> legOptionsList_j = legOptionsList.get(j);
 
-                stepDate = legOptionsList.get(0).get(i).getGreeks_updated_at();
-                position.daysRun++;
+                if (legOptionsList_j.size() == i) {
 
-                for (int j = 0; j < legOptionsList.size(); j++) {
-
-                    List<OptionV2> legOptionsList_j = legOptionsList.get(j);
-
-                    if (legOptionsList_j.size() == i) {
-
-                        //Rolling to next option
-                        if (Strategy.RollingStrategy.NONE.equals(strategy.getRollingStrategy())) {
-                            break;
-                        }
-
-                        if (!rollPosition(position, strategy, legOptionsList_j, i, j)) {
-                            break;
-                        }
+                    //Rolling to next option
+                    if (Strategy.RollingStrategy.NONE.equals(strategy.getRollingStrategy())) {
+                        shouldBreak = true;
+                        break;
                     }
 
-                    if (legOptionsList_j.size() <= i) {
-                        continue;
-                    }
-
-                    //adding check for bad data
-                    if (legOptionsList_j.get(i).getMid_price() == null || legOptionsList_j.get(i).getMid_price() == 0) {
-                        continue;
+                    if (!rollPosition(position, strategy, legOptionsList_j, i, j)) {
+                        break;
                     }
                 }
 
-                boolean positionAddSuccessful = position.add(legOptionsList, i);
-
-                if (!positionAddSuccessful) {
+                if (legOptionsList_j.size() <= i) {
                     continue;
                 }
 
-                if (initialStockPrice == 0) {
-                    initialPrice = position.positionPrice;
-                    initialStockPrice = stockHistoryMap.get(stepDate);
-                } else {
-                    if (initialPrice == 0) {
-                        //usually means bought and sold same options
-                        break;
-                    }
-                    change = (position.positionPrice - position.adjustments / position.contractSize) / initialPrice;
+                //adding check for bad data
+                if (legOptionsList_j.get(i).getMid_price() == null || legOptionsList_j.get(i).getMid_price() == 0) {
+                    continue;
                 }
+            }
 
-                double stockPrice = stockHistoryMap.get(stepDate);
-                double changeValue = (position.positionPrice - initialPrice) * position.contractSize - position.adjustments;
+            if (shouldBreak) {
+                break;
+            }
 
-                thetaTotal += position.positionTheta * position.contractSize;
+            boolean positionAddSuccessful = position.add(legOptionsList, i);
 
-                if (changeValue < maxDrawDownValue) {
-                    maxDrawDownValue = (int) changeValue;
-                    maxDrawDown = maxDrawDownValue / (initialPrice * position.contractSize);
+            if (!positionAddSuccessful) {
+
+                continue;
+            }
+
+            if (initialStockPrice == 0) {
+                initialPrice = position.positionPrice;
+                initialStockPrice = stockHistoryMap.get(stepDate);
+            } else {
+                if (initialPrice == 0) {
+                    //usually means bought and sold same options
+                    break;
                 }
+                change = (position.positionPrice - position.adjustments / position.contractSize) / initialPrice;
+            }
 
-                String changeStr = "Change " + df2.format(change) + "(" + df2.format(changeValue) + ")  " +
-                        stockSymbol + " " + stockPrice + " change " + df2.format(stockPrice / initialStockPrice);
+            if (strategyRunData.getInitialStockPrice() == null) {
+                strategyRunData.setInitialStockPrice(initialStockPrice);
+            }
 
-                StrategyPerformance strategyPerformance = createStrategyPerformance(strategy, stockSymbol, startDate, change, changeValue, maxDrawDown, maxDrawDownValue, position, stockPrice, initialStockPrice, thetaTotal);
+            double stockPrice = stockHistoryMap.get(stepDate);
+            double changeValue = (position.positionPrice - initialPrice) * position.contractSize - position.adjustments;
 
-                addToStrategyPerformanceMap(strategyPerformance, stepDate, position, changeStr, strategy);
+            thetaTotal += position.positionTheta * position.contractSize;
+
+            if (changeValue < maxDrawDownValue) {
+                maxDrawDownValue = (int) changeValue;
+                maxDrawDown = maxDrawDownValue / (initialPrice * position.contractSize);
+            }
+
+            String changeStr = "Change " + df2.format(change) + "(" + df2.format(changeValue) + ")  " +
+                    stockSymbol + " " + stockPrice + " change " + df2.format(stockPrice / initialStockPrice);
+
+            if (debug) {
+                System.out.println(sdf.format(stepDate) + " " + position + " " + changeStr);
+            }
+
+            StrategyPerformance strategyPerformance = createStrategyPerformance(strategy, stockSymbol, startDate, change, changeValue, maxDrawDown, maxDrawDownValue, position, stockPrice, initialStockPrice, thetaTotal);
+
+            addToStrategyRunData(strategyRunData, strategyPerformance, stepDate, position, changeStr, strategy);
+        }
+
+        if (stepDate != null) {
+            Date checkDate = new Date(stepDate.getTime() + MIN_DAYS_TO_CONTINUE * 24 * 60 * 60 * 1000);
+
+            if (checkDate.before(new Date())) {
+                return getStats(strategyRunData, stockSymbol, stepDate, strategy, debug);
             }
         }
+
+        return strategyRunData;
     }
 
-    private void addToStrategyPerformanceMap(StrategyPerformance strategyPerformance, Date stepDate, Position position, String changeStr, Strategy strategy) {
-        StrategyPerformanceId strategyPerformanceId = strategyPerformance.getStrategyPerformanceId();
+    private StrategyPerformanceTotal createStrategyPerformanceTotal(StrategyRunData strategyRunData) {
+        StrategyPerformanceTotal strategyPerformanceTotal = new StrategyPerformanceTotal();
 
-        strategyPerformanceMap.put(strategyPerformanceId, strategyPerformance);
-        StrategyPerformanceData strategyPerformanceData;
+        Double thetaTotal = 0d;
+        Integer changeValue = 0;
+        Integer maxDrawDownValue = 0;
+        Double stockLatestPrice = 0d;
+        double averageChange = 0d;
 
-        if (strategyPerformanceDataMap.containsKey(strategyPerformanceId)) {
-            strategyPerformanceData = strategyPerformanceDataMap.get(strategyPerformanceId);
-        } else {
-            strategyPerformanceData = new StrategyPerformanceData();
-            strategyPerformanceData.addData(strategy.toString());
-            strategyPerformanceDataMap.put(strategyPerformanceId, strategyPerformanceData);
+        for (StrategyPerformance strategyPerformance : strategyRunData.getStrategyPerformanceMap().values()) {
+            if (strategyPerformanceTotal.getStrategyPerformanceId() == null) {
+                strategyPerformanceTotal.setStrategyPerformanceId(strategyPerformance.getStrategyPerformanceId());
+                strategyPerformanceTotal.setStrategyType(strategyPerformance.getStrategyType());
+            }
+
+            stockLatestPrice = strategyPerformance.getStockLatest();
+
+            maxDrawDownValue = Math.min(maxDrawDownValue, strategyPerformance.getMaxDrawDownValue());
+
+            thetaTotal += strategyPerformance.getThetaTotal();
+            changeValue += strategyPerformance.getChangeValue();
+            averageChange += strategyPerformance.getChange();
         }
-        strategyPerformanceData.addData(sdf.format(stepDate) + " " + position + " " + changeStr);
 
-        strategyPerformanceData.setId(strategyPerformance.getIndex());
+        strategyPerformanceTotal.setStockInitial(strategyRunData.getInitialStockPrice());
+        strategyPerformanceTotal.setThetaTotal(Precision.round(thetaTotal, 2));
+        strategyPerformanceTotal.setChangeValue(changeValue);
+        strategyPerformanceTotal.setRuns(strategyRunData.getStrategyPerformanceMap().size());
+        strategyPerformanceTotal.setAvgChange(Precision.round(averageChange / strategyPerformanceTotal.getRuns(), 2));
+        strategyPerformanceTotal.setMaxDrawDownValue(maxDrawDownValue);
+        strategyPerformanceTotal.setStockChange(Precision.round(stockLatestPrice / strategyRunData.getInitialStockPrice(), 2));
+        strategyPerformanceTotal.setStockLatest(stockLatestPrice);
+
+        return strategyPerformanceTotal;
     }
 
     private StrategyPerformance createStrategyPerformance(
@@ -258,6 +301,24 @@ public class StatsDelegate {
         Thread.sleep(1);
 
         return strategyPerformance;
+    }
+
+    private void addToStrategyRunData(StrategyRunData strategyRunData, StrategyPerformance strategyPerformance, Date stepDate, Position position, String changeStr, Strategy strategy) {
+        StrategyPerformanceId strategyPerformanceId = strategyPerformance.getStrategyPerformanceId();
+
+        strategyRunData.getStrategyPerformanceMap().put(strategyPerformanceId, strategyPerformance);
+        StrategyPerformanceData strategyPerformanceData;
+
+        if (strategyRunData.getStrategyPerformanceDataMap().containsKey(strategyPerformanceId)) {
+            strategyPerformanceData = strategyRunData.getStrategyPerformanceDataMap().get(strategyPerformanceId);
+        } else {
+            strategyPerformanceData = new StrategyPerformanceData();
+            strategyPerformanceData.addData(strategy.toString());
+            strategyRunData.getStrategyPerformanceDataMap().put(strategyPerformanceId, strategyPerformanceData);
+        }
+        strategyPerformanceData.addData(sdf.format(stepDate) + " " + position + " " + changeStr);
+
+        strategyPerformanceData.setId(strategyPerformance.getIndex());
     }
 
     private boolean rollPosition(final Position position, final Strategy strategy, List<OptionV2> legOptionsList_j, int i, int j) {
@@ -408,7 +469,7 @@ public class StatsDelegate {
                 double resultDeltaDistance = Math.abs(Math.abs(result.getDelta()) - Math.abs(delta));
                 double deltaDistance = Math.abs(Math.abs(optionV2.getDelta()) - Math.abs(delta));
 
-                if ((daysDistance == resultDaysDistance) && (deltaDistance < resultDeltaDistance) && (optionV2.getDays_left() == result.getDays_left())) {
+                if ((daysDistance == resultDaysDistance) && (deltaDistance < resultDeltaDistance) && (optionV2.getDays_left().equals(result.getDays_left()))) {
                     result = optionV2;
                 }
             }

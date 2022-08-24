@@ -23,6 +23,9 @@ public class PersistenceDelegate {
     private StrategyPerformanceDataRepository strategyPerformanceDataRepository;
 
     @Autowired
+    private StrategyPerformanceTotalRepository strategyPerformanceTotalRepository;
+
+    @Autowired
     private StrategyPerformanceRepository strategyPerformanceRepository;
 
     public StockSymbolRepository getStockSymbolRepository() {
@@ -47,5 +50,9 @@ public class PersistenceDelegate {
 
     public StrategyPerformanceDataRepository getStrategyPerformanceDataRepository() {
         return strategyPerformanceDataRepository;
+    }
+
+    public StrategyPerformanceTotalRepository getStrategyPerformanceTotalRepository() {
+        return strategyPerformanceTotalRepository;
     }
 }

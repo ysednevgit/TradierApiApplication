@@ -32,9 +32,11 @@ public class MainController {
     private StatsDelegate statsDelegate;
 
     @GetMapping("/get_stats")
-    public String getStats(@RequestParam(value = "runFullReport", required = false, defaultValue = "false") boolean runFullReport) throws Exception {
+    public String getStats(@RequestParam(value = "symbol", required = false) String symbol,
+                           @RequestParam(value = "startDate", required = false) String startDate,
+                           @RequestParam(value = "debug", required = false) boolean debug) throws Exception {
 
-        statsDelegate.getStats(runFullReport);
+        statsDelegate.getStats(symbol, startDate, debug);
 
         return "Success";
     }
