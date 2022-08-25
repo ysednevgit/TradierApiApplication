@@ -22,7 +22,7 @@ public class StatsDelegate {
 
     private static final int MIN_DAYS_TO_CONTINUE = 5;
 
-    public void getStats(final String symbol, final String startDateString, boolean debug) throws Exception {
+    public void getStats(final String symbol, final String startDateString, boolean debug, boolean test) throws Exception {
 
         Map<StrategyPerformanceId, StrategyPerformance> strategyPerformanceMap = new LinkedHashMap<>();
         Map<StrategyPerformanceId, StrategyPerformanceData> strategyPerformanceDataMap = new LinkedHashMap<>();
@@ -45,7 +45,9 @@ public class StatsDelegate {
                 runStartDate = startDate;
             }
 
-            for (Strategy strategy : new StrategyTester().getStrategiesToTest()) {
+            List<Strategy> strategies = test ? new StrategyTester().getTestStrategiesToTest() : new StrategyTester().getStrategiesToTest();
+
+            for (Strategy strategy : strategies) {
                 StrategyRunData strategyRunData = getStats(null, symbolWithDate.getSymbol(), runStartDate, strategy, debug);
 
                 StrategyPerformanceTotal strategyPerformanceTotal = createStrategyPerformanceTotal(strategyRunData);
@@ -229,6 +231,9 @@ public class StatsDelegate {
         Double stockLatestPrice = 0d;
         double averageChange = 0d;
 
+        String dataIds = "";
+        int wins = 0;
+
         for (StrategyPerformance strategyPerformance : strategyRunData.getStrategyPerformanceMap().values()) {
             if (strategyPerformanceTotal.getStrategyPerformanceId() == null) {
                 strategyPerformanceTotal.setStrategyPerformanceId(strategyPerformance.getStrategyPerformanceId());
@@ -242,16 +247,26 @@ public class StatsDelegate {
             thetaTotal += strategyPerformance.getThetaTotal();
             changeValue += strategyPerformance.getChangeValue();
             averageChange += strategyPerformance.getChange();
+
+            if (strategyPerformance.getChangeValue() > 0) {
+                wins++;
+            }
+        }
+
+        for (StrategyPerformanceData strategyPerformanceData : strategyRunData.getStrategyPerformanceDataMap().values()) {
+            dataIds += "" + strategyPerformanceData.getId() + "\n";
         }
 
         strategyPerformanceTotal.setStockInitial(strategyRunData.getInitialStockPrice());
         strategyPerformanceTotal.setThetaTotal(Precision.round(thetaTotal, 2));
         strategyPerformanceTotal.setChangeValue(changeValue);
         strategyPerformanceTotal.setRuns(strategyRunData.getStrategyPerformanceMap().size());
+        strategyPerformanceTotal.setWins(wins);
         strategyPerformanceTotal.setAvgChange(Precision.round(averageChange / strategyPerformanceTotal.getRuns(), 2));
         strategyPerformanceTotal.setMaxDrawDownValue(maxDrawDownValue);
         strategyPerformanceTotal.setStockChange(Precision.round(stockLatestPrice / strategyRunData.getInitialStockPrice(), 2));
         strategyPerformanceTotal.setStockLatest(stockLatestPrice);
+        strategyPerformanceTotal.setDataIds(dataIds);
 
         return strategyPerformanceTotal;
     }

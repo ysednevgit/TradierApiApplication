@@ -24,6 +24,10 @@ public class StrategyPerformanceTotal {
     private Double stockChange;
 
     private int runs;
+    private Integer wins;
 
     private String strategyType;
+
+    private String dataIds;
+
 }

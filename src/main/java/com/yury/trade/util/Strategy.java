@@ -62,7 +62,10 @@ public class Strategy {
         CALENDAR,
         DOUBLE_CALENDAR,
         STRADDLE,
-        CUSTOM
+        CUSTOM,
+        SIMPLE,
+        RATIO,
+        DEBIT_SPREAD
     }
 
 }

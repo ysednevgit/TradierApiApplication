@@ -34,9 +34,10 @@ public class MainController {
     @GetMapping("/get_stats")
     public String getStats(@RequestParam(value = "symbol", required = false) String symbol,
                            @RequestParam(value = "startDate", required = false) String startDate,
-                           @RequestParam(value = "debug", required = false) boolean debug) throws Exception {
+                           @RequestParam(value = "debug", required = false) boolean debug,
+                           @RequestParam(value = "test", required = false) boolean test) throws Exception {
 
-        statsDelegate.getStats(symbol, startDate, debug);
+        statsDelegate.getStats(symbol, startDate, debug, test);
 
         return "Success";
     }
