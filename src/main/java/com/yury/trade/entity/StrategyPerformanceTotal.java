@@ -13,7 +13,11 @@ public class StrategyPerformanceTotal {
     private StrategyPerformanceId strategyPerformanceId;
 
     private Integer changeValue;
+
+    //change on average
     private double avgChange;
+
+    private Double change;
 
     private double thetaTotal;
 

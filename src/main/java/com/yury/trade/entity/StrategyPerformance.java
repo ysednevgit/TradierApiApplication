@@ -15,8 +15,9 @@ public class StrategyPerformance {
     private Double change;
     private Integer changeValue;
 
-    private Double thetaToPricePct;
-    private Double thetaTotalToPricePct;
+    //position price at start
+    private Double initialPrice;
+
     private double thetaTotal;
 
     private Double maxDrawDown;

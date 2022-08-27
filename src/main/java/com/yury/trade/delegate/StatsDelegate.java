@@ -206,9 +206,15 @@ public class StatsDelegate {
                 System.out.println(sdf.format(stepDate) + " " + position + " " + changeStr);
             }
 
-            StrategyPerformance strategyPerformance = createStrategyPerformance(strategy, stockSymbol, startDate, change, changeValue, maxDrawDown, maxDrawDownValue, position, stockPrice, initialStockPrice, thetaTotal);
+            StrategyPerformance strategyPerformance = createStrategyPerformance(strategy, stockSymbol, startDate, change, changeValue,
+                    maxDrawDown, maxDrawDownValue, position, stockPrice, initialStockPrice, initialPrice * position.contractSize, thetaTotal);
 
             addToStrategyRunData(strategyRunData, strategyPerformance, stepDate, position, changeStr, strategy);
+
+            if (shouldExit(strategy, change)) {
+                break;
+            }
+
         }
 
         if (stepDate != null) {
@@ -222,6 +228,19 @@ public class StatsDelegate {
         return strategyRunData;
     }
 
+    private boolean shouldExit(Strategy strategy, double change) {
+        if (Strategy.ExitStrategy._10_PERCENT_PROFIT.equals(strategy.getExitStrategy()) && change >= 1.1) {
+            return true;
+        }
+        if (Strategy.ExitStrategy._20_PERCENT_PROFIT.equals(strategy.getExitStrategy()) && change >= 1.2) {
+            return true;
+        }
+        if (Strategy.ExitStrategy._50_PERCENT_PROFIT.equals(strategy.getExitStrategy()) && change >= 1.5) {
+            return true;
+        }
+        return false;
+    }
+
     private StrategyPerformanceTotal createStrategyPerformanceTotal(StrategyRunData strategyRunData) {
         StrategyPerformanceTotal strategyPerformanceTotal = new StrategyPerformanceTotal();
 
@@ -229,7 +248,9 @@ public class StatsDelegate {
         Integer changeValue = 0;
         Integer maxDrawDownValue = 0;
         Double stockLatestPrice = 0d;
-        double averageChange = 0d;
+        double averageChange = 0;
+        double initialPriceTotal = 0;
+        double changeValueTotal = 0;
 
         String dataIds = "";
         int wins = 0;
@@ -247,6 +268,8 @@ public class StatsDelegate {
             thetaTotal += strategyPerformance.getThetaTotal();
             changeValue += strategyPerformance.getChangeValue();
             averageChange += strategyPerformance.getChange();
+            initialPriceTotal += strategyPerformance.getInitialPrice();
+            changeValueTotal += strategyPerformance.getChangeValue();
 
             if (strategyPerformance.getChangeValue() > 0) {
                 wins++;
@@ -257,12 +280,15 @@ public class StatsDelegate {
             dataIds += "" + strategyPerformanceData.getId() + "\n";
         }
 
+        double finalPriceTotal = initialPriceTotal + changeValueTotal;
+
         strategyPerformanceTotal.setStockInitial(strategyRunData.getInitialStockPrice());
         strategyPerformanceTotal.setThetaTotal(Precision.round(thetaTotal, 2));
         strategyPerformanceTotal.setChangeValue(changeValue);
         strategyPerformanceTotal.setRuns(strategyRunData.getStrategyPerformanceMap().size());
         strategyPerformanceTotal.setWins(wins);
         strategyPerformanceTotal.setAvgChange(Precision.round(averageChange / strategyPerformanceTotal.getRuns(), 2));
+        strategyPerformanceTotal.setChange(Precision.round(finalPriceTotal / initialPriceTotal, 2));
         strategyPerformanceTotal.setMaxDrawDownValue(maxDrawDownValue);
         strategyPerformanceTotal.setStockChange(Precision.round(stockLatestPrice / strategyRunData.getInitialStockPrice(), 2));
         strategyPerformanceTotal.setStockLatest(stockLatestPrice);
@@ -282,6 +308,7 @@ public class StatsDelegate {
             Position position,
             double stockPrice,
             double initialStockPrice,
+            double initialPrice,
             double thetaTotal) throws InterruptedException {
 
         StrategyPerformance strategyPerformance = new StrategyPerformance();
@@ -296,21 +323,12 @@ public class StatsDelegate {
 
         strategyPerformance.setThetaTotal(Precision.round(thetaTotal, 2));
 
-        if (position.positionTheta != 0) {
-            double thetaToPricePct = position.positionTheta * position.contractSize / position.positionPrice;
-            strategyPerformance.setThetaToPricePct(Precision.round(thetaToPricePct, 2));
-        }
-
-        if (strategyPerformance.getThetaTotal() != 0) {
-            double thetaTotalToPricePct = strategyPerformance.getThetaTotal() / position.positionPrice;
-            strategyPerformance.setThetaTotalToPricePct(Precision.round(thetaTotalToPricePct, 2));
-        }
-
         strategyPerformance.setMaxDrawDown(Precision.round(maxDrawDown, 2));
         strategyPerformance.setMaxDrawDownValue(maxDrawDownValue);
         strategyPerformance.setDaysRun(position.daysRun);
         strategyPerformance.setStockLatest(stockPrice);
         strategyPerformance.setStockChange(Precision.round(stockPrice / initialStockPrice, 2));
+        strategyPerformance.setInitialPrice(Precision.round(initialPrice, 2));
         strategyPerformance.setStrategyType(strategy.getStrategyType().name());
         strategyPerformance.setIndex(new Date().getTime());
         Thread.sleep(1);

@@ -12,9 +12,10 @@ public class Strategy {
 
     private String description;
 
-    private RollingStrategy rollingStrategy = RollingStrategy.ROLL_SAME_STRIKE;
+    private RollingStrategy rollingStrategy = RollingStrategy.NONE;
 
-    private ExitStrategy exitStrategy = ExitStrategy.SHORT_STRIKE_EXPIRED;;
+    private ExitStrategy exitStrategy = ExitStrategy.NONE;
+    ;
 
     private StrategyType strategyType = StrategyType.CUSTOM;
 
@@ -40,9 +41,10 @@ public class Strategy {
     @Override
     public String toString() {
 
-        String rs = RollingStrategy.ROLL_SAME_DELTA.equals(rollingStrategy) ? rollingStrategy.name() : "";
+        String rs = !RollingStrategy.NONE.equals(rollingStrategy) ? rollingStrategy.name() + " " : "";
+        String es = !ExitStrategy.NONE.equals(exitStrategy) ? exitStrategy.name() : "";
 
-        return "Strategy{ " + name + " " + rs + "}";
+        return "Strategy{ " + name + " " + rs + es + "}";
     }
 
     public enum RollingStrategy {
@@ -52,9 +54,10 @@ public class Strategy {
     }
 
     public enum ExitStrategy {
-        NONE,//never exit
-        SHORT_STRIKE_EXPIRED,//default
-        SHORT_STRIKE_EXPIRED_ITM//exit if short strike expired in the money
+        _10_PERCENT_PROFIT,
+        _20_PERCENT_PROFIT,
+        _50_PERCENT_PROFIT,
+        NONE
     }
 
     public enum StrategyType {
