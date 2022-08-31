@@ -38,8 +38,6 @@ public class StrategyTester {
         strategyType = Strategy.StrategyType.STRADDLE;
         strategies.add(getStrategy(new Leg(1, 50, 7), new Leg(1, 50, 7, OptionV2.OptionType.put)));
         strategies.add(getStrategy(new Leg(1, 50, 14), new Leg(1, 50, 14, OptionV2.OptionType.put)));
-//        strategies.add(getStrategy(new Leg(1, 30, 7), new Leg(1, 30, 7, OptionV2.OptionType.put)));
-//        strategies.add(getStrategy(new Leg(1, 20, 7), new Leg(1, 20, 7, OptionV2.OptionType.put)));
         strategies.add(getStrategy(new Leg(1, 30, 14), new Leg(1, 30, 14, OptionV2.OptionType.put)));
         strategies.add(getStrategy(new Leg(1, 20, 14), new Leg(1, 20, 14, OptionV2.OptionType.put)));
 
@@ -58,11 +56,6 @@ public class StrategyTester {
         strategies.add(getStrategy(new Leg(1, 20, 14)));
         strategies.add(getStrategy(new Leg(1, 20, 14, OptionV2.OptionType.put)));
 
-        //CUSTOM
-        strategyType = Strategy.StrategyType.CUSTOM;
-//        strategies.add(getStrategy(new Leg(1, 50, 10), new Leg(1, 20, 10, OptionV2.OptionType.put)));
-//        strategies.add(getStrategy(new Leg(1, 50, 7), new Leg(1, 20, 7, OptionV2.OptionType.put)));
-
         return strategies;
     }
 
@@ -72,32 +65,13 @@ public class StrategyTester {
         List<Strategy> strategies = new ArrayList<>();
 
         strategyType = Strategy.StrategyType.STRADDLE;
+        strategies.add(getStrategy(new Leg(1, 50, 14), new Leg(1, 50, 14, OptionV2.OptionType.put)));
+        strategies.add(getStrategy(new Leg(1, 50, 7), new Leg(1, 50, 7, OptionV2.OptionType.put)));
+
         strategies.add(getStrategy(new Leg(1, 50, 14), new Leg(1, 50, 14, OptionV2.OptionType.put), null, null, null, Strategy.ExitStrategy._50_PERCENT_PROFIT));
-//        strategies.add(getStrategy(new Leg(1, 50, 7), new Leg(1, 50, 7, OptionV2.OptionType.put), null, null, null, Strategy.ExitStrategy._20_PERCENT_PROFIT));
-//        strategies.add(getStrategy(new Leg(1, 20, 14), new Leg(1, 20, 14, OptionV2.OptionType.put), null, null, null, Strategy.ExitStrategy._20_PERCENT_PROFIT));
 
-//        strategies.add(getStrategy(new Leg(1, 20, 14), new Leg(1, 20, 14, OptionV2.OptionType.put), null, null, null, Strategy.ExitStrategy._10_PERCENT_PROFIT));
-//        strategies.add(getStrategy(new Leg(1, 20, 14), new Leg(1, 20, 14, OptionV2.OptionType.put), null, null, null, Strategy.ExitStrategy._50_PERCENT_PROFIT));
-
-//        strategies.add(getStrategy(new Leg(1, 30, 14), new Leg(1, 30, 14, OptionV2.OptionType.put), null, null, null, Strategy.ExitStrategy._10_PERCENT_PROFIT));
-//        strategies.add(getStrategy(new Leg(1, 30, 14), new Leg(1, 30, 14, OptionV2.OptionType.put), null, null, null, Strategy.ExitStrategy._50_PERCENT_PROFIT));
-
-/**
-
- //STRADDLE
- strategyType = Strategy.StrategyType.STRADDLE;
- strategies.add(getStrategy(new Leg(1, 50, 7), new Leg(1, 50, 7, OptionV2.OptionType.put)));
- strategies.add(getStrategy(new Leg(1, 50, 14), new Leg(1, 50, 14, OptionV2.OptionType.put)));
-
- /**
- //STRADDLE
- strategyType = Strategy.StrategyType.RATIO_DIAGONAL;
-
- //        strategies.add(getStrategy(new Leg(6, 20, 300), new Leg(-1, 80, 7), new Leg(1, 50, 300), new Leg(-6, 10, 300)));
- strategies.add(getStrategy(new Leg(4, 30, 300), new Leg(-1, 85, 7), new Leg(1, 50, 300), new Leg(-4, 15, 300)));
- strategies.add(getStrategy(new Leg(3, 40, 300), new Leg(-1, 85, 7), new Leg(1, 50, 300), new Leg(-3, 20, 300)));
- //        strategies.add(getStrategy(new Leg(2, 55, 300), new Leg(-1, 85, 7), new Leg(1, 50, 300), new Leg(-2, 30, 300)));
- **/
+        strategyType = Strategy.StrategyType.SIMPLE;
+        strategies.add(getStrategy(new Leg(3, 20, 14, OptionV2.OptionType.put)));
 
         return strategies;
     }
@@ -145,7 +119,6 @@ public class StrategyTester {
 
         return strategy;
     }
-
 
     private class Leg {
         int coef;

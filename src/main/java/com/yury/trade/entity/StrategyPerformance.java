@@ -4,6 +4,7 @@ import lombok.Data;
 
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
+import javax.persistence.Lob;
 
 @Entity
 @Data
@@ -31,4 +32,18 @@ public class StrategyPerformance {
     private String strategyType;
 
     private long index;
+
+    @Lob
+    private String data = "";
+
+    @Lob
+    private String chartData = "";
+
+    public void addData(String data) {
+        this.data += data + "\n";
+    }
+
+    public void addChartData(String chartData) {
+        this.chartData += chartData + "\n";
+    }
 }

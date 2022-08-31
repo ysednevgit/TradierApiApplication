@@ -41,16 +41,13 @@ public class OptionV2 implements Serializable {
     private Double theta;//-0.0012644444007122117
     private Double vega;//0.009263385706564832
     private Double rho;//0.43574179665108764
-    private Double phi;//-0.8281754259430878
     private Double bid_iv;//0.5193757913668888
     private Double mid_iv;//0.5205006117090346
     private Double ask_iv;//0.5216254320511804
-    private Double smv_vol;//0.505
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date greeks_updated_at;//"2022-07-21 20:00:08"
     private Double change_percentage;
-    private Integer average_volume;
     private Integer last_volume;
     private Long trade_date;//1658423566393
     private Double prevclose;//0.77
@@ -63,8 +60,6 @@ public class OptionV2 implements Serializable {
 
     @Enumerated(EnumType.STRING)
     private OptionType option_type;
-
-    private String root_symbol;//"SPY"
 
     private Integer days_left;
 

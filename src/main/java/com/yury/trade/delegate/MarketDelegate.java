@@ -244,11 +244,9 @@ public class MarketDelegate {
         option.setTheta(getDouble(greeksNode.get("theta")));
         option.setVega(getDouble(greeksNode.get("vega")));
         option.setRho(getDouble(greeksNode.get("rho")));
-        option.setPhi(getDouble(greeksNode.get("phi")));
         option.setBid_iv(getDouble(greeksNode.get("bid_iv")));
         option.setMid_iv(getDouble(greeksNode.get("mid_iv")));
         option.setAsk_iv(getDouble(greeksNode.get("ask_iv")));
-        option.setSmv_vol(getDouble(greeksNode.get("smv_vol")));
 
         option.setGreeks_updated_at(simpleDateFormat.parse(greeksNode.get("updated_at").textValue()));
 

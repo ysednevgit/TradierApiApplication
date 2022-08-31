@@ -11,7 +11,7 @@ import java.util.List;
 
 public interface OptionRepository extends CrudRepository<OptionV2, OptionV2Id> {
 
-    @Query("SELECT distinct root_symbol FROM OptionV2 where greeks_updated_at = ?1")
+    @Query("SELECT distinct underlying FROM OptionV2 where greeks_updated_at = ?1")
     List<String> findRootSymbols(Date greeks_updated_at);
 
     @Query("SELECT s FROM OptionV2 s WHERE days_left = null")
@@ -36,7 +36,7 @@ public interface OptionRepository extends CrudRepository<OptionV2, OptionV2Id> {
     @Query("SELECT s FROM OptionV2 s WHERE underlying = ?1 and greeks_updated_at = ?2 and expiration_date = ?3")
     List<OptionV2> findNext(String underlying, Date greeks_updated_at, Date expirationDate);
 
-    @Query(value = "SELECT MIN(greeks_updated_at) as date, root_symbol as symbol  FROM OPTIONV2 GROUP BY root_symbol ORDER BY root_symbol", nativeQuery = true)
+    @Query(value = "SELECT MIN(greeks_updated_at) as date, underlying as symbol  FROM OPTIONV2 GROUP BY underlying ORDER BY underlying", nativeQuery = true)
     List<SymbolWithDate> findRootSymbolsWithMinDates();
 
     //    @Query("SELECT s FROM OptionV2 s WHERE underlying = ?1 and delta = ?2 and greeks_updated_at = ?3")
