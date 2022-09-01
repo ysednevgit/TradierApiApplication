@@ -42,7 +42,7 @@ public class LineChartBuilder extends JFrame {
         pack();
         setTitle(symbol + " Options Chart");
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
     }
 
     private XYDataset createDataset(List<LineChartDataset> datasets) {

@@ -20,16 +20,6 @@ public class StrategyTester {
         strategies.add(getStrategy(new Leg(4, 30, 300), new Leg(-1, 85, 7), new Leg(1, 50, 300), new Leg(-4, 15, 300), Strategy.RollingStrategy.ROLL_SAME_STRIKE));
         strategies.add(getStrategy(new Leg(4, 80, 400), new Leg(-3, 85, 60), null, null, Strategy.RollingStrategy.ROLL_SAME_STRIKE));
 
-/**
-
-
- //CALENDAR
- strategyType = Strategy.StrategyType.CALENDAR;
-
- //        strategies.add(getStrategy(new Leg(1, 50, 30), new Leg(-1, 0, 7), null, null, Strategy.RollingStrategy.NONE));
- strategies.add(getStrategy(new Leg(1, 30, 60), new Leg(-1, 0, 15), null, null, Strategy.RollingStrategy.NONE));
- strategies.add(getStrategy(new Leg(1, 35, 70), new Leg(-1, 0, 15), null, null, Strategy.RollingStrategy.NONE));
- **/
         //DOUBLE_CALENDAR
         strategyType = Strategy.StrategyType.DOUBLE_CALENDAR;
         strategies.add(getStrategy(new Leg(1, 30, 60), new Leg(-1, 0, 30), new Leg(1, 30, 60, OptionV2.OptionType.put), new Leg(-1, 0, 30, OptionV2.OptionType.put)));
@@ -38,7 +28,9 @@ public class StrategyTester {
         strategyType = Strategy.StrategyType.STRADDLE;
         strategies.add(getStrategy(new Leg(1, 50, 7), new Leg(1, 50, 7, OptionV2.OptionType.put)));
         strategies.add(getStrategy(new Leg(1, 50, 14), new Leg(1, 50, 14, OptionV2.OptionType.put)));
+        strategies.add(getStrategy(new Leg(1, 50, 14), new Leg(1, 50, 14, OptionV2.OptionType.put), null, null, null, Strategy.ExitStrategy._50_PERCENT_PROFIT));
         strategies.add(getStrategy(new Leg(1, 30, 14), new Leg(1, 30, 14, OptionV2.OptionType.put)));
+        strategies.add(getStrategy(new Leg(1, 30, 14), new Leg(1, 30, 14, OptionV2.OptionType.put), null, null, null, Strategy.ExitStrategy._50_PERCENT_PROFIT));
         strategies.add(getStrategy(new Leg(1, 20, 14), new Leg(1, 20, 14, OptionV2.OptionType.put)));
 
         //SIMPLE
@@ -64,12 +56,17 @@ public class StrategyTester {
     public List<Strategy> getTestStrategiesToTest() {
         List<Strategy> strategies = new ArrayList<>();
 
+        strategyType = Strategy.StrategyType.RATIO;
+        strategies.add(getStrategy(new Leg(-1, 50, 14), new Leg(10, 10, 14, OptionV2.OptionType.put)));
+
+        //STRADDLE
         strategyType = Strategy.StrategyType.STRADDLE;
         strategies.add(getStrategy(new Leg(1, 50, 14), new Leg(1, 50, 14, OptionV2.OptionType.put)));
-        strategies.add(getStrategy(new Leg(1, 50, 7), new Leg(1, 50, 7, OptionV2.OptionType.put)));
 
-        strategies.add(getStrategy(new Leg(1, 50, 14), new Leg(1, 50, 14, OptionV2.OptionType.put), null, null, null, Strategy.ExitStrategy._50_PERCENT_PROFIT));
+        strategyType = Strategy.StrategyType.STRADDLE;
+        strategies.add(getStrategy(new Leg(1, 30, 14), new Leg(1, 30, 14, OptionV2.OptionType.put), null, null, null, Strategy.ExitStrategy._10_PERCENT_PROFIT));
 
+        //SIMPLE
         strategyType = Strategy.StrategyType.SIMPLE;
         strategies.add(getStrategy(new Leg(3, 20, 14, OptionV2.OptionType.put)));
 
@@ -103,7 +100,13 @@ public class StrategyTester {
         String leg3string = leg3 != null ? leg3.toString() : null;
         String leg4string = leg4 != null ? leg4.toString() : null;
 
-        Strategy strategy = new Strategy(leg1string + " " + leg2string + " " + leg3string + " " + leg4string, "", leg1string, leg2string, leg3string, leg4string);
+        StringBuilder nameBuilder = new StringBuilder(leg1.toString());
+
+        appendLegToName(nameBuilder, leg2);
+        appendLegToName(nameBuilder, leg3);
+        appendLegToName(nameBuilder, leg4);
+
+        Strategy strategy = new Strategy(nameBuilder.toString(), "", leg1string, leg2string, leg3string, leg4string);
 
         if (rollingStrategy != null) {
             strategy.setRollingStrategy(rollingStrategy);
@@ -118,6 +121,12 @@ public class StrategyTester {
         }
 
         return strategy;
+    }
+
+    private void appendLegToName(StringBuilder name, Leg leg) {
+        if (leg != null) {
+            name.append(" ").append(leg);
+        }
     }
 
     private class Leg {

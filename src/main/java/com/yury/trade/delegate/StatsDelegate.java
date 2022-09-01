@@ -20,7 +20,7 @@ public class StatsDelegate {
 
     private static DecimalFormat df2 = new DecimalFormat("###.##");
 
-    private static final int MIN_DAYS_TO_CONTINUE = 5;
+    private static final int MIN_DAYS_TO_CONTINUE = 2;
 
     public void getStats(final String symbol, final String startDateString, boolean debug, boolean test) throws Exception {
 
@@ -76,6 +76,7 @@ public class StatsDelegate {
             strategyRunData = new StrategyRunData();
             strategyRunData.setStrategy(strategy);
             strategyRunData.setStartDate(startDate);
+
         }
 
         if (allOptions.size() == 0) {

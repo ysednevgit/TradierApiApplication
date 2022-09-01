@@ -30,7 +30,7 @@ public class ChartDelegate {
 
         Date startDate = startDateString != null ? sdf.parse(startDateString) : null;
 
-        strategyPerformanceTotals = getStrategyPerformanceTotals(symbol, startDate, getStrategies());
+        strategyPerformanceTotals = getStrategyPerformanceTotals(symbol, startDate, getStrategies(test));
 
         List<LineChartDataset> lineChartDatasets = getLineChartDatasets(strategyPerformanceTotals);
 
@@ -103,11 +103,11 @@ public class ChartDelegate {
         return lineChartDataset;
     }
 
-    private List<String> getStrategies() {
+    private List<String> getStrategies(boolean test) {
 
         List<String> strategiesDescriptions = new ArrayList<>();
 
-        List<Strategy> strategies = strategyTester.getTestStrategiesToTest();
+        List<Strategy> strategies = test ? strategyTester.getTestStrategiesToTest() : new ArrayList<>();
 
         for (Strategy strategy : strategies) {
             strategiesDescriptions.add(strategy.toString());
