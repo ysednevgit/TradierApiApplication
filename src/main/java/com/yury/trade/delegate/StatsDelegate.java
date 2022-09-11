@@ -47,12 +47,22 @@ public class StatsDelegate {
             List<Strategy> strategies = test ? new StrategyTester().getTestStrategiesToTest() : new StrategyTester().getStrategiesToTest();
 
             for (Strategy strategy : strategies) {
-                StrategyRunData strategyRunData = getStats(null, symbolWithDate.getSymbol(), runStartDate, strategy, debug);
 
-                StrategyPerformanceTotal strategyPerformanceTotal = createStrategyPerformanceTotal(strategyRunData);
-                strategyPerformanceTotalMap.put(strategyPerformanceTotal.getStrategyPerformanceId(), strategyPerformanceTotal);
+                Date newRunStartDate = runStartDate;
 
-                strategyPerformanceMap.putAll(strategyRunData.getStrategyPerformanceMap());
+                if (strategy.getChangeStartDateByDays() != 0) {
+                    newRunStartDate = new Date(runStartDate.getTime() + strategy.getChangeStartDateByDays() * 24 * 60 * 60 * 1000);
+                }
+
+                StrategyRunData strategyRunData = getStats(null, symbolWithDate.getSymbol(), newRunStartDate, strategy, debug);
+
+                if (strategyRunData.getStrategyPerformanceMap().size() > 0) {
+                    StrategyPerformanceTotal strategyPerformanceTotal = createStrategyPerformanceTotal(strategyRunData);
+                    strategyPerformanceTotalMap.put(strategyPerformanceTotal.getStrategyPerformanceId(), strategyPerformanceTotal);
+
+                    strategyPerformanceMap.putAll(strategyRunData.getStrategyPerformanceMap());
+                }
+
             }
         }
 
@@ -68,6 +78,7 @@ public class StatsDelegate {
     private StrategyRunData getStats(StrategyRunData strategyRunData, String stockSymbol, Date startDate, Strategy strategy, boolean debug) throws InterruptedException {
 
         System.out.println();
+
         System.out.println("Get stats: " + stockSymbol + " " + startDate + " " + "Strategy: " + strategy + " " + strategy.getStrategyType());
 
         List<OptionV2> allOptions = persistenceDelegate.getOptionRepository().findByUnderlyingAndGreeks_updated_at(stockSymbol, startDate);
@@ -208,7 +219,6 @@ public class StatsDelegate {
             if (shouldExit(strategy, change)) {
                 break;
             }
-
         }
 
         if (stepDate != null) {
@@ -464,9 +474,6 @@ public class StatsDelegate {
             if (minUpdated != null && minUpdated.after(optionV2.getGreeks_updated_at())) {
                 continue;
             }
-
-            //     options.stream().filter(o -> o.getStrike().equals(strikePrice)).filter(o -> o.getOption_type().equals(optionType)).collect(Collectors.toList());
-            //    options.stream().filter(o -> o.getStrike().equals(strikePrice)).filter(o -> o.getGreeks_updated_at().after(minUpdated)).collect(Collectors.toList());
 
             if (strikePrice != null && !strikePrice.equals(optionV2.getStrike())) {
                 continue;

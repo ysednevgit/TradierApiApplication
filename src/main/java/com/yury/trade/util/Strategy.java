@@ -19,6 +19,8 @@ public class Strategy {
 
     private StrategyType strategyType = StrategyType.CUSTOM;
 
+    private int changeStartDateByDays = 0;
+
     //list of 1 C 20 300  - means buy 1 call 20 delta with 300 days out
     private List<String> legs = new ArrayList<>();
 

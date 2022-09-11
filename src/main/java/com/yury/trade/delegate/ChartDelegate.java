@@ -73,7 +73,7 @@ public class ChartDelegate {
 
     private LineChartDataset getLineChartDataset(StrategyPerformanceTotal strategyPerformanceTotal) {
         LineChartDataset lineChartDataset = new LineChartDataset();
-        lineChartDataset.setName(strategyPerformanceTotal.getStrategyPerformanceId().getStrategyDescription());
+        lineChartDataset.setName(strategyPerformanceTotal.getStrategyPerformanceId().getStrategyDescription() + " " + sdf.format(strategyPerformanceTotal.getStrategyPerformanceId().getStartDate()));
 
         Map<String, String> chartDataMap = new LinkedHashMap<>();
 

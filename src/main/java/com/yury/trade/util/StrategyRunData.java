@@ -16,4 +16,5 @@ public class StrategyRunData {
     private Date startDate;
 
     private Double initialStockPrice;
+
 }

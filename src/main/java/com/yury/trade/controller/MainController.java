@@ -29,12 +29,15 @@ public class MainController {
     private StatsDelegate statsDelegate;
 
     @Autowired
+    private CustomStatsDelegate  customStatsDelegate;
+
+    @Autowired
     private ChartDelegate chartDelegate;
 
     @GetMapping("/draw_chart")
     public String drawChart(@RequestParam(value = "symbol", required = true) String symbol,
-                           @RequestParam(value = "startDate", required = false) String startDate,
-                           @RequestParam(value = "test", required = false) boolean test) throws Exception {
+                            @RequestParam(value = "startDate", required = false) String startDate,
+                            @RequestParam(value = "test", required = false) boolean test) throws Exception {
 
         chartDelegate.drawChart(symbol, startDate, test);
 
@@ -56,6 +59,23 @@ public class MainController {
 
         return "Success";
     }
+
+    @GetMapping("/get_custom_stats")
+    public String getCustomStats(@RequestParam(value = "symbol", required = false) String symbol,
+                                 @RequestParam(value = "startDate", required = false) String startDate,
+                                 @RequestParam(value = "debug", required = false) boolean debug,
+                                 @RequestParam(value = "test", required = false) boolean test,
+                                 @RequestParam(value = "drawChart", required = false) boolean drawChart) throws Exception {
+
+        customStatsDelegate.getStats(symbol, startDate, debug, test);
+
+        if (drawChart) {
+            chartDelegate.drawChart(symbol, startDate, test);
+        }
+
+        return "Success";
+    }
+
 
     @PostMapping("/refresh")
     public String refresh() throws ParseException {
