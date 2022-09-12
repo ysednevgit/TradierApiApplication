@@ -10,16 +10,16 @@ import java.util.List;
 
 public interface StrategyPerformanceTotalRepository extends CrudRepository<StrategyPerformanceTotal, StrategyPerformanceId> {
 
-    @Query("SELECT s FROM StrategyPerformanceTotal s WHERE strategyPerformanceId.symbol = :symbol and strategyPerformanceId.strategyDescription IN (:strategyDescriptions) ORDER BY strategy_type, strategy_description")
+    @Query("SELECT s FROM StrategyPerformanceTotal s WHERE strategyPerformanceId.symbol = :symbol and strategyPerformanceId.strategyDescription IN (:strategyDescriptions) ORDER BY change_value DESC")
     List<StrategyPerformanceTotal> find(String symbol, List<String> strategyDescriptions);
 
-    @Query("SELECT s FROM StrategyPerformanceTotal s WHERE strategyPerformanceId.symbol = :symbol and strategyPerformanceId.startDate = :startDate and strategyPerformanceId.strategyDescription IN (:strategyDescriptions) ORDER BY strategy_type, strategy_description")
+    @Query("SELECT s FROM StrategyPerformanceTotal s WHERE strategyPerformanceId.symbol = :symbol and strategyPerformanceId.startDate = :startDate and strategyPerformanceId.strategyDescription IN (:strategyDescriptions) ORDER BY change_value DESC")
     List<StrategyPerformanceTotal> find(String symbol, Date startDate, List<String> strategyDescriptions);
 
-    @Query("SELECT s FROM StrategyPerformanceTotal s WHERE strategyPerformanceId.symbol = :symbol ORDER BY strategy_type, strategy_description")
+    @Query("SELECT s FROM StrategyPerformanceTotal s WHERE strategyPerformanceId.symbol = :symbol ORDER BY change_value DESC")
     List<StrategyPerformanceTotal> find(String symbol);
 
-    @Query("SELECT s FROM StrategyPerformanceTotal s WHERE strategyPerformanceId.symbol = :symbol and strategyPerformanceId.startDate = :startDate ORDER BY strategy_type, strategy_description")
+    @Query("SELECT s FROM StrategyPerformanceTotal s WHERE strategyPerformanceId.symbol = :symbol and strategyPerformanceId.startDate = :startDate ORDER BY change_value DESC")
     List<StrategyPerformanceTotal> find(String symbol, Date startDate);
 
 }
