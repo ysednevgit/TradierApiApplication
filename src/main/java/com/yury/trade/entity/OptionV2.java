@@ -10,6 +10,7 @@ import java.util.Date;
 
 @Entity
 @Data
+@Cacheable
 public class OptionV2 implements Serializable {
 
     @Transient
@@ -46,7 +47,7 @@ public class OptionV2 implements Serializable {
     private Double ask_iv;//0.5216254320511804
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date greeks_updated_at;//"2022-07-21 20:00:08"
+    private Date greeks_updated_at;//"2022-07-21"
     private Double change_percentage;
     private Integer last_volume;
     private Long trade_date;//1658423566393
@@ -65,7 +66,11 @@ public class OptionV2 implements Serializable {
 
     @Override
     public String toString() {
-        return optionV2Id.getSymbol() + " " + getDays_left() + " days left $" + df2.format(mid_price * contract_size) ;
+        return optionV2Id.getSymbol() + " " + getDays_left() + " days left $" + df2.format(getMid_price() * contract_size);
+    }
+
+    public Double getMid_price() {
+        return mid_price == null ? 0 : mid_price;
     }
 
     public enum OptionType {

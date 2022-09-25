@@ -2,7 +2,6 @@ package com.yury.trade.entity;
 
 import lombok.Data;
 
-import javax.persistence.Column;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.Lob;

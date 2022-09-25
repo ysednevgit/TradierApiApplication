@@ -1,5 +1,6 @@
 package com.yury.trade.delegate;
 
+import com.yury.trade.entity.FlowPerformance;
 import com.yury.trade.entity.StrategyPerformanceTotal;
 import com.yury.trade.util.LineChartBuilder;
 import com.yury.trade.util.LineChartDataset;
@@ -24,6 +25,22 @@ public class ChartDelegate {
 
     private StrategyTester strategyTester = new StrategyTester();
 
+    public void drawFlowChart(final String symbol, final String startDateString) throws ParseException {
+
+        Date startDate = startDateString != null ? sdf.parse(startDateString) : null;
+
+        List<FlowPerformance> flowPerformances = persistenceDelegate.getFlowPerformanceRepository().findByStartDate(startDate);
+
+        List<LineChartDataset> lineChartDatasets = getLineChartDatasets(flowPerformances);
+
+        EventQueue.invokeLater(() -> {
+
+            var ex = new LineChartBuilder(symbol, lineChartDatasets);
+            ex.setVisible(true);
+        });
+
+    }
+
     public void drawChart(final String symbol, final String startDateString, final boolean test) throws ParseException {
 
         List<StrategyPerformanceTotal> strategyPerformanceTotals = null;
@@ -33,6 +50,16 @@ public class ChartDelegate {
         strategyPerformanceTotals = getStrategyPerformanceTotals(symbol, startDate, getStrategies(test));
 
         List<LineChartDataset> lineChartDatasets = getLineChartDatasets(strategyPerformanceTotals);
+
+        EventQueue.invokeLater(() -> {
+
+            var ex = new LineChartBuilder(symbol, lineChartDatasets);
+            ex.setVisible(true);
+        });
+
+    }
+
+    public void drawChart(final String symbol, final List<LineChartDataset> lineChartDatasets) {
 
         EventQueue.invokeLater(() -> {
 
@@ -56,13 +83,19 @@ public class ChartDelegate {
         return persistenceDelegate.getStrategyPerformanceTotalRepository().find(symbol);
     }
 
-    private List<LineChartDataset> getLineChartDatasets(List<StrategyPerformanceTotal> strategyPerformanceTotals) {
+    private List<LineChartDataset> getLineChartDatasets(List objects) {
 
         List<LineChartDataset> result = new ArrayList<>();
 
-        for (StrategyPerformanceTotal strategyPerformanceTotal : strategyPerformanceTotals) {
+        for (Object object : objects) {
 
-            LineChartDataset dataset = getLineChartDataset(strategyPerformanceTotal);
+            LineChartDataset dataset = null;
+
+            if (object instanceof StrategyPerformanceTotal) {
+                dataset = getLineChartDataset((StrategyPerformanceTotal) object);
+            } else {
+                dataset = getLineChartDataset((FlowPerformance) object);
+            }
 
             if (dataset.getData().size() > 0) {
                 result.add(dataset);
@@ -115,4 +148,26 @@ public class ChartDelegate {
         return strategiesDescriptions;
     }
 
+    private LineChartDataset getLineChartDataset(FlowPerformance flowPerformance) {
+
+        LineChartDataset lineChartDataset = new LineChartDataset();
+        lineChartDataset.setName(flowPerformance.getName());
+
+        Map<Integer, Integer> data = new LinkedHashMap<>();
+
+        String[] words = flowPerformance.getChartData().split(",");
+
+        int day = 1;
+
+        for (String word : words) {
+
+            data.put(day, Integer.parseInt(word));
+
+            day++;
+        }
+
+        lineChartDataset.setData(data);
+
+        return lineChartDataset;
+    }
 }

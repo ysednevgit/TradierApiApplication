@@ -74,6 +74,7 @@ public class Position implements Serializable {
                 ", gamma=" + df2.format(contractSize * positionGamma) +
                 ", $" + df2.format(contractSize * positionPrice) +
                 ", adj=" + df2.format(adjustments) +
+                ", " + coeffs +
                 ", " + options +
                 "} ";
     }

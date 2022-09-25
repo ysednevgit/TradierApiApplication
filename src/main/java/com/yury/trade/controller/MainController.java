@@ -29,10 +29,24 @@ public class MainController {
     private StatsDelegate statsDelegate;
 
     @Autowired
-    private CustomStatsDelegate  customStatsDelegate;
+    private CustomStatsDelegate customStatsDelegate;
 
     @Autowired
     private ChartDelegate chartDelegate;
+
+    @Autowired
+    private FlowDelegate flowDelegate;
+
+    @GetMapping("/get_flow")
+    public String getFlow(@RequestParam(value = "symbol", required = false) String symbol,
+                          @RequestParam(value = "startDate", required = false) String startDate,
+                          @RequestParam(value = "debug", required = false) boolean debug,
+                          @RequestParam(value = "drawChart", required = false) boolean drawChart) throws Exception {
+
+        flowDelegate.getFlow(symbol, startDate, debug, drawChart);
+
+        return "Success";
+    }
 
     @GetMapping("/draw_chart")
     public String drawChart(@RequestParam(value = "symbol", required = true) String symbol,
@@ -40,6 +54,15 @@ public class MainController {
                             @RequestParam(value = "test", required = false) boolean test) throws Exception {
 
         chartDelegate.drawChart(symbol, startDate, test);
+
+        return "Success";
+    }
+
+    @GetMapping("/draw_flow_chart")
+    public String drawFlowChart(@RequestParam(value = "symbol") String symbol,
+                                @RequestParam(value = "startDate") String startDate) throws Exception {
+
+        chartDelegate.drawFlowChart(symbol, startDate);
 
         return "Success";
     }

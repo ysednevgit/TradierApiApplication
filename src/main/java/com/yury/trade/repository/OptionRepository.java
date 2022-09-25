@@ -11,6 +11,9 @@ import java.util.List;
 
 public interface OptionRepository extends CrudRepository<OptionV2, OptionV2Id> {
 
+    @Query("SELECT distinct greeks_updated_at FROM OptionV2 where underlying = ?1")
+    List<Date> findGreeksUpdatedAt(String underlying);
+
     @Query("SELECT distinct underlying FROM OptionV2 where greeks_updated_at = ?1")
     List<String> findRootSymbols(Date greeks_updated_at);
 
@@ -22,7 +25,7 @@ public interface OptionRepository extends CrudRepository<OptionV2, OptionV2Id> {
     @Query("SELECT s FROM OptionV2 s WHERE optionV2Id.symbol = ?1 and greeks_updated_at > ?2")
     List<OptionV2> findByOptionV2IdSymbolWithGreaterUpdated(String symbol, Date updated);
 
-    @Query("SELECT s FROM OptionV2 s WHERE optionV2Id.symbol = ?1 and greeks_updated_at >= ?2")
+    @Query("SELECT s FROM OptionV2 s WHERE optionV2Id.symbol = ?1 and greeks_updated_at >= ?2 ORDER BY greeks_updated_at")
     List<OptionV2> findByOptionV2IdSymbolWithGreaterOrSameUpdated(String symbol, Date updated);
 
     List<OptionV2> findByUnderlying(String Underlying);
@@ -30,8 +33,8 @@ public interface OptionRepository extends CrudRepository<OptionV2, OptionV2Id> {
     @Query("SELECT s FROM OptionV2 s WHERE underlying = ?1 and greeks_updated_at = ?2 order by days_left, option_type, strike")
     List<OptionV2> findByUnderlyingAndGreeks_updated_at(String underlying, Date greeks_updated_at);
 
-    @Query("SELECT s FROM OptionV2 s WHERE underlying = ?1 and strike = ?2 and greeks_updated_at = ?3 and expiration_date = ?4")
-    List<OptionV2> findByNextByStrike(String underlying, Double strike, Date minGreeks_updated_at, Date expirationDate);
+    @Query("SELECT s FROM OptionV2 s WHERE underlying = ?1 and strike = ?2 and greeks_updated_at = ?3 and option_type = ?4")
+    List<OptionV2> findByNextByStrike(String underlying, Double strike, Date minGreeks_updated_at, OptionV2.OptionType optionType);
 
     @Query("SELECT s FROM OptionV2 s WHERE underlying = ?1 and greeks_updated_at = ?2 and expiration_date = ?3")
     List<OptionV2> findNext(String underlying, Date greeks_updated_at, Date expirationDate);

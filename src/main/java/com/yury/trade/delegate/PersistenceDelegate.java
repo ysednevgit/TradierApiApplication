@@ -20,6 +20,9 @@ public class PersistenceDelegate {
     private StockQuoteRepository stockQuoteRepository;
 
     @Autowired
+    private FlowPerformanceRepository flowPerformanceRepository;
+
+    @Autowired
     private StrategyPerformanceTotalRepository strategyPerformanceTotalRepository;
 
     @Autowired
@@ -31,6 +34,10 @@ public class PersistenceDelegate {
 
     public OptionRepository getOptionRepository() {
         return optionRepository;
+    }
+
+    public FlowPerformanceRepository getFlowPerformanceRepository() {
+        return flowPerformanceRepository;
     }
 
     public StockHistoryRepository getStockHistoryRepository() {

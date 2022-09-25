@@ -11,7 +11,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Component
-public class StatsDelegate {
+public class CustomStatsDelegate {
 
     @Autowired
     private PersistenceDelegate persistenceDelegate;
@@ -20,29 +20,15 @@ public class StatsDelegate {
 
     private static DecimalFormat df2 = new DecimalFormat("###.##");
 
-    private static final int MIN_DAYS_TO_CONTINUE = 1;
+    private static final int MIN_DAYS_TO_CONTINUE = 2;
 
     public void getStats(final String symbol, final String startDateString, boolean debug, boolean test) throws Exception {
 
-        List<SymbolWithDate> symbolsWithMinDates = persistenceDelegate.getOptionRepository().findRootSymbolsWithMinDates();
+        Map<StrategyPerformanceId, StrategyPerformance> strategyPerformanceMap = new LinkedHashMap<>();
 
-/**
-        List<Date> startDates = persistenceDelegate.getOptionRepository().findGreeksUpdatedAt(symbol);
-
-        for (Date startDate : startDates) {
-
-            getStats(startDate, symbolsWithMinDates, symbol, debug, test);
-        }
-**/
         Date startDate = startDateString != null ? sdf.parse(startDateString) : null;
 
-        getStats(startDate, symbolsWithMinDates, symbol, debug, test);
-
-        System.out.println("Get stats End.");
-    }
-
-    private void getStats(final Date startDate, List<SymbolWithDate> symbolsWithMinDates, String symbol, boolean debug, boolean test) throws Exception {
-        Map<StrategyPerformanceId, StrategyPerformance> strategyPerformanceMap = new LinkedHashMap<>();
+        List<SymbolWithDate> symbolsWithMinDates = persistenceDelegate.getOptionRepository().findRootSymbolsWithMinDates();
 
         Map<StrategyPerformanceId, StrategyPerformanceTotal> strategyPerformanceTotalMap = new LinkedHashMap<>();
 
@@ -58,25 +44,15 @@ public class StatsDelegate {
                 runStartDate = startDate;
             }
 
-            List<Strategy> strategies = test ? new StrategyTester().getTestStrategiesToTest() : new StrategyTester().getStrategiesToTest();
+            List<Strategy> strategies = new StrategyTester().getCustomStrategiesToTest();
 
             for (Strategy strategy : strategies) {
+                StrategyRunData strategyRunData = getStats(null, symbolWithDate.getSymbol(), runStartDate, strategy, debug);
 
-                Date newRunStartDate = runStartDate;
+                StrategyPerformanceTotal strategyPerformanceTotal = createStrategyPerformanceTotal(strategyRunData);
+                strategyPerformanceTotalMap.put(strategyPerformanceTotal.getStrategyPerformanceId(), strategyPerformanceTotal);
 
-                if (strategy.getChangeStartDateByDays() != 0) {
-                    newRunStartDate = new Date(runStartDate.getTime() + strategy.getChangeStartDateByDays() * 24 * 60 * 60 * 1000);
-                }
-
-                StrategyRunData strategyRunData = getStats(null, symbolWithDate.getSymbol(), newRunStartDate, strategy, debug);
-
-                if (strategyRunData.getStrategyPerformanceMap().size() > 0) {
-                    StrategyPerformanceTotal strategyPerformanceTotal = createStrategyPerformanceTotal(strategyRunData);
-                    strategyPerformanceTotalMap.put(strategyPerformanceTotal.getStrategyPerformanceId(), strategyPerformanceTotal);
-
-                    strategyPerformanceMap.putAll(strategyRunData.getStrategyPerformanceMap());
-                }
-
+                strategyPerformanceMap.putAll(strategyRunData.getStrategyPerformanceMap());
             }
         }
 
@@ -85,12 +61,13 @@ public class StatsDelegate {
 
         persistenceDelegate.getStrategyPerformanceTotalRepository().saveAll(strategyPerformanceTotalMap.values());
         System.out.println("Saved to StrategyPerformanceTotal " + strategyPerformanceTotalMap.values().size());
+
+        System.out.println("Get stats End.");
     }
 
     private StrategyRunData getStats(StrategyRunData strategyRunData, String stockSymbol, Date startDate, Strategy strategy, boolean debug) throws InterruptedException {
 
         System.out.println();
-
         System.out.println("Get stats: " + stockSymbol + " " + startDate + " " + "Strategy: " + strategy + " " + strategy.getStrategyType());
 
         List<OptionV2> allOptions = persistenceDelegate.getOptionRepository().findByUnderlyingAndGreeks_updated_at(stockSymbol, startDate);
@@ -150,14 +127,7 @@ public class StatsDelegate {
                 break;
             }
 
-            if (position.options.size() > 0 && strategy.getDaysWhenExit() > 0 && position.options.get(0).getDays_left() <= strategy.getDaysWhenExit()) {
-                break;
-            }
-
             stepDate = legOptionsList.get(0).get(i).getGreeks_updated_at();
-
-            // int rsi = getRSI(stockHistoryMap, 7, stepDate);
-
             position.daysRun++;
 
             boolean shouldBreak = false;
@@ -238,6 +208,7 @@ public class StatsDelegate {
             if (shouldExit(strategy, change)) {
                 break;
             }
+
         }
 
         if (stepDate != null) {
@@ -251,6 +222,26 @@ public class StatsDelegate {
         return strategyRunData;
     }
 
+    private boolean shouldRoll(Position position, int j, double stockPrice) {
+
+        if (position.options.size() < position.coeffs.size()) {
+            return false;
+        }
+
+        int coeff = position.coeffs.get(j);
+
+        if (coeff < 0) {
+            OptionV2 optionV2 = position.options.get(j);
+            if (OptionV2.OptionType.call.equals(optionV2.getOption_type()) && stockPrice < optionV2.getStrike()) {
+                return true;
+            }
+            if (OptionV2.OptionType.put.equals(optionV2.getOption_type()) && stockPrice > optionV2.getStrike()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean shouldExit(Strategy strategy, double change) {
         if (Strategy.ProfitExitStrategy._10_PERCENT_PROFIT.equals(strategy.getProfitExitStrategy()) && change >= 1.1) {
             return true;
@@ -258,13 +249,7 @@ public class StatsDelegate {
         if (Strategy.ProfitExitStrategy._20_PERCENT_PROFIT.equals(strategy.getProfitExitStrategy()) && change >= 1.2) {
             return true;
         }
-        if (Strategy.ProfitExitStrategy._35_PERCENT_PROFIT.equals(strategy.getProfitExitStrategy()) && change >= 1.35) {
-            return true;
-        }
         if (Strategy.ProfitExitStrategy._50_PERCENT_PROFIT.equals(strategy.getProfitExitStrategy()) && change >= 1.5) {
-            return true;
-        }
-        if (Strategy.ProfitExitStrategy._75_PERCENT_PROFIT.equals(strategy.getProfitExitStrategy()) && change >= 1.75) {
             return true;
         }
         return false;
@@ -390,15 +375,15 @@ public class StatsDelegate {
 
     private boolean rollPosition(final Position position, final Strategy strategy, List<OptionV2> legOptionsList_j, int i, int j) {
 
+        System.out.print("Rolling ");
+
         OptionV2 newOption = null;
         OptionV2 originalOption = legOptionsList_j.get(i - 1);
-
-        //int rollCoeff = position.rolls.get(j);
 
         int rollCoeff = 0;
         Date updated = originalOption.getGreeks_updated_at();
 
-        List<OptionV2> options = null;
+        List<OptionV2> options;
 
         String leg = strategy.getLegs().get(j);
 
@@ -414,23 +399,48 @@ public class StatsDelegate {
         if (Strategy.RollingStrategy.ROLL_SAME_STRIKE.equals(strategy.getRollingStrategy())) {
 
             options = persistenceDelegate.getOptionRepository().findByNextByStrike(originalOption.getUnderlying(), originalOption.getStrike(), updated, originalOption.getOption_type());
-            newOption = getNextWithSameStrike(originalOption, daysToExpiry, null, options);
+            newOption = getNextWithSameStrike(originalOption, daysToExpiry, null, options, rollCoeff);
 
         } else if (Strategy.RollingStrategy.ROLL_SAME_DELTA.equals(strategy.getRollingStrategy())) {
 
-            options = persistenceDelegate.getOptionRepository().findNext(originalOption.getUnderlying(), updated, nextDate);
+            while (true) {
+                options = persistenceDelegate.getOptionRepository().findNext(originalOption.getUnderlying(), updated, nextDate);
+
+                if (options == null || options.size() == 0) {
+                    cal.add(Calendar.DAY_OF_MONTH, -1);
+
+                    nextDate = cal.getTime();
+                } else {
+                    break;
+                }
+            }
+
             newOption = getNextWithSameDelta(getDelta(leg), originalOption.getOption_type(), getDaysToExpiry(leg), null, options, rollCoeff);
+
+            if (newOption == null) {
+                System.out.println("Here!");
+            }
+
         }
+
+        System.out.println(" to new option " + newOption);
 
         if (newOption == null || newOption.getMid_price() == 0) {
             return false;
         }
 
+        int longDelta = (int) (position.options.get(0).getDelta() * position.coeffs.get(0) * position.contractSize);
+
+        int oldCoeff = position.coeffs.get(j);
+        int newCoeff = -1 * longDelta / (int) (newOption.getDelta() * position.contractSize);
+
+        position.coeffs.set(j, newCoeff);
+
         position.roll(j);
 
-        double priceChange = (newOption.getMid_price() - originalOption.getMid_price()) * originalOption.getContract_size();
+        double priceChange = (newOption.getMid_price() * newCoeff - originalOption.getMid_price() * oldCoeff) * originalOption.getContract_size();
 
-        position.adjustments += position.coeffs.get(j) * priceChange;
+        position.adjustments += priceChange;
 
         List<OptionV2> newOptions = persistenceDelegate.getOptionRepository().findByOptionV2IdSymbolWithGreaterUpdated(newOption.getOptionV2Id().getSymbol(), originalOption.getGreeks_updated_at());
 
@@ -439,66 +449,14 @@ public class StatsDelegate {
         return true;
     }
 
-    protected Map<Date, Double> getStockHistoryMap(final String stockSymbol) {
-
-        Map<Date, Double> result = new TreeMap<>();
-
+    private Map<Date, Double> getStockHistoryMap(final String stockSymbol) {
+        Map<Date, Double> result = new HashMap<>();
         List<StockHistory> stockHistories = persistenceDelegate.getStockHistoryRepository().findByStockHistoryIdSymbol(stockSymbol);
 
         for (StockHistory stockHistory : stockHistories) {
             result.put(stockHistory.getStockHistoryId().getDate(), stockHistory.getClose());
         }
         return result;
-    }
-
-    private int getRSI(final Map<Date, Double> stockHistoryMap, int rsiPeriod, Date date) {
-
-        double previousValue = 0;
-
-        Queue<Double> moves = new LinkedList<>();
-
-        for (Map.Entry<Date, Double> entry : stockHistoryMap.entrySet()) {
-
-            if (previousValue == 0) {
-                previousValue = entry.getValue();
-                continue;
-            }
-
-            double move = entry.getValue() - previousValue;
-
-            if (moves.size() >= rsiPeriod) {
-                moves.remove();
-                moves.add(move);
-            } else {
-                moves.add(move);
-            }
-
-            if (entry.getKey().equals(date)) {
-                return getRSI(moves);
-            }
-
-            previousValue = entry.getValue();
-        }
-
-        return -1;
-    }
-
-    private int getRSI(Queue<Double> moves) {
-        double upMove = 0;
-        double downMove = 0;
-
-        for (Double move : moves) {
-            if (move > 0) {
-                upMove += move;
-            } else {
-                downMove += move;
-            }
-
-        }
-        double avgUpMove = upMove / moves.size();
-        double avgDownMove = downMove / moves.size();
-
-        return (int) (100 - 100 / (1 + avgUpMove / Math.abs(avgDownMove)));
     }
 
     private int getCoeff(String leg) {
@@ -536,7 +494,7 @@ public class StatsDelegate {
         return getClosest(delta, daysToExpiry, optionType, strikePrice, null, options);
     }
 
-    protected OptionV2 getClosest(double delta, final int days_to_expiry, final OptionV2.OptionType optionType, final Double strikePrice, final Date minUpdated, final List<OptionV2> options) {
+    private OptionV2 getClosest(double delta, final int days_to_expiry, final OptionV2.OptionType optionType, final Double strikePrice, final Date minUpdated, final List<OptionV2> options) {
 
         if (options == null || !options.iterator().hasNext()) {
             return null;
@@ -551,6 +509,9 @@ public class StatsDelegate {
             if (minUpdated != null && minUpdated.after(optionV2.getGreeks_updated_at())) {
                 continue;
             }
+
+            //     options.stream().filter(o -> o.getStrike().equals(strikePrice)).filter(o -> o.getOption_type().equals(optionType)).collect(Collectors.toList());
+            //    options.stream().filter(o -> o.getStrike().equals(strikePrice)).filter(o -> o.getGreeks_updated_at().after(minUpdated)).collect(Collectors.toList());
 
             if (strikePrice != null && !strikePrice.equals(optionV2.getStrike())) {
                 continue;
@@ -590,8 +551,8 @@ public class StatsDelegate {
         return result;
     }
 
-    private OptionV2 getNextWithSameStrike(final OptionV2 option, final int days_to_expiry, final Date minUpdated, final List<OptionV2> options) {
-        return getClosest(0, days_to_expiry, option.getOption_type(), option.getStrike(), minUpdated, options);
+    private OptionV2 getNextWithSameStrike(final OptionV2 option, final int days_to_expiry, final Date minUpdated, final List<OptionV2> options, int rollCoeff) {
+        return getClosest(0, days_to_expiry * (rollCoeff + 2), option.getOption_type(), option.getStrike(), minUpdated, options);
     }
 
     private OptionV2 getNextWithSameDelta(final Double delta, final OptionV2.OptionType optionType, final int days_to_expiry, final Date minUpdated, final List<OptionV2> options, int rollCoeff) {
