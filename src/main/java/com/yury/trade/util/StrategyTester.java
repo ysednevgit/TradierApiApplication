@@ -43,16 +43,44 @@ public class StrategyTester {
     public List<Strategy> getTestStrategiesToTest() {
         List<Strategy> strategies = new ArrayList<>();
 
-        strategyType = Strategy.StrategyType.STRADDLE;
+//        strategyType = Strategy.StrategyType.DEBIT_SPREAD;
+//        strategies.add(getStrategy(new Leg(4, 50, 8), new Leg(-4, 30, 8), new Leg(4, 50, 8, OptionV2.OptionType.put), new Leg(-4, 30, 8, OptionV2.OptionType.put)));
 
-        Strategy strategy1 = getStrategy(new Leg(1, 50, 10), new Leg(1, 50, 10, OptionV2.OptionType.put));
-        strategy1.setDaysWhenExit(0);
+        //RATIO_DIAGONAL
+        strategyType = Strategy.StrategyType.SIMPLE;
+
+        strategies.add(getStrategy(new Leg(1, 40, 14)));
+        strategies.add(getStrategy(new Leg(1, 30, 6)));
+
+        //strategies.add(getStrategy(new Leg(2, 55, 6), new Leg(-1, 85, 6)));
+        //strategies.add(getStrategy(new Leg(4, 80, 400), new Leg(-3, 85, 60), null, null, Strategy.RollingStrategy.ROLL_SAME_STRIKE));
 
 
-        strategies.add(strategy1);
+        /**
+         strategyType = Strategy.StrategyType.CUSTOM;
+         strategies.add(getStrategy(new Leg(1, 10, 14), new Leg(-1, 10, 28),
+         new Leg(1, 10, 14, OptionV2.OptionType.put), new Leg(-1, 10, 28, OptionV2.OptionType.put)));
+         **/
 
         return strategies;
     }
+
+    //for some custom algo testing
+    public List<Strategy> getFlowStrategiesToTest() {
+        List<Strategy> strategies = new ArrayList<>();
+
+        strategyType = Strategy.StrategyType.BOMB;
+        Strategy strategy = getStrategy(new Leg(1, 20, 14), new Leg(1, 20, 14, OptionV2.OptionType.put),
+                new Leg(-1, 20, 7), new Leg(-1, 20, 7, OptionV2.OptionType.put));
+//        strategy.setBuyDays(Arrays.asList(1, 3, 5));
+
+        strategy.setExitStrategy(Strategy.ExitStrategy.SHORT_STRIKE);
+
+        strategies.add(strategy);
+
+        return strategies;
+    }
+
 
     //for some custom algo testing
     public List<Strategy> getCustomStrategiesToTest() {

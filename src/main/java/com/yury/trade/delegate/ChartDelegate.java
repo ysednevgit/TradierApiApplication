@@ -25,11 +25,20 @@ public class ChartDelegate {
 
     private StrategyTester strategyTester = new StrategyTester();
 
-    public void drawFlowChart(final String symbol, final String startDateString) throws ParseException {
+    public void drawFlowChart(final String symbol, final String startDateString, final String endDateString) throws ParseException {
 
         Date startDate = startDateString != null ? sdf.parse(startDateString) : null;
+        Date endDate = endDateString != null ? sdf.parse(endDateString) : null;
 
-        List<FlowPerformance> flowPerformances = persistenceDelegate.getFlowPerformanceRepository().findByStartDate(startDate);
+        List<FlowPerformance> flowPerformances = null;
+
+        if (symbol != null && endDate != null) {
+            flowPerformances = persistenceDelegate.getFlowPerformanceRepository().findByParams(symbol, startDate, endDate);
+        } else if (symbol != null) {
+            flowPerformances = persistenceDelegate.getFlowPerformanceRepository().findByParams(symbol, startDate);
+        } else {
+            flowPerformances = persistenceDelegate.getFlowPerformanceRepository().findByStartDate(startDate);
+        }
 
         List<LineChartDataset> lineChartDatasets = getLineChartDatasets(flowPerformances);
 

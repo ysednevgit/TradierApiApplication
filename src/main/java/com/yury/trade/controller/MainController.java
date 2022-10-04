@@ -40,10 +40,11 @@ public class MainController {
     @GetMapping("/get_flow")
     public String getFlow(@RequestParam(value = "symbol", required = false) String symbol,
                           @RequestParam(value = "startDate", required = false) String startDate,
+                          @RequestParam(value = "endDate", required = false) String endDate,
                           @RequestParam(value = "debug", required = false) boolean debug,
                           @RequestParam(value = "drawChart", required = false) boolean drawChart) throws Exception {
 
-        flowDelegate.getFlow(symbol, startDate, debug, drawChart);
+        flowDelegate.getFlow(symbol, startDate, endDate, debug, drawChart);
 
         return "Success";
     }
@@ -59,10 +60,11 @@ public class MainController {
     }
 
     @GetMapping("/draw_flow_chart")
-    public String drawFlowChart(@RequestParam(value = "symbol") String symbol,
-                                @RequestParam(value = "startDate") String startDate) throws Exception {
+    public String drawFlowChart(@RequestParam(value = "symbol", required = false) String symbol,
+                                @RequestParam(value = "startDate") String startDate,
+                                @RequestParam(value = "endDate", required = false) String endDate) throws Exception {
 
-        chartDelegate.drawFlowChart(symbol, startDate);
+        chartDelegate.drawFlowChart(symbol, startDate, endDate);
 
         return "Success";
     }

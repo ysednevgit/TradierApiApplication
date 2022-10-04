@@ -15,12 +15,15 @@ public class FlowPerformance {
     @Id
     private String name;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    private Date startDate;//2022-01-20
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    private Date endDate;//2022-01-20
+
     private Integer changeValue;
 
     private String symbol;//SPY
-
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-    private Date startDate;//2022-01-20
 
     @Lob
     private String chartData = "";
@@ -40,5 +43,14 @@ public class FlowPerformance {
     private Integer median_up_move;
 
     private Integer median_down_move;
+
+    private Integer max_up_move;
+
+    private Integer max_down_move;
+
+    private String description;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    private Date updated;//2022-01-20
 
 }

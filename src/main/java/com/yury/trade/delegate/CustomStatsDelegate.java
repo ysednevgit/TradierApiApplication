@@ -28,17 +28,17 @@ public class CustomStatsDelegate {
 
         Date startDate = startDateString != null ? sdf.parse(startDateString) : null;
 
-        List<SymbolWithDate> symbolsWithMinDates = persistenceDelegate.getOptionRepository().findRootSymbolsWithMinDates();
+        List<SymbolWithDates> symbolsWithMinDates = persistenceDelegate.getOptionRepository().findRootSymbolsWithMinDates();
 
         Map<StrategyPerformanceId, StrategyPerformanceTotal> strategyPerformanceTotalMap = new LinkedHashMap<>();
 
-        for (SymbolWithDate symbolWithDate : symbolsWithMinDates) {
+        for (SymbolWithDates symbolWithDates : symbolsWithMinDates) {
 
-            if (symbol != null && !symbol.equals(symbolWithDate.getSymbol())) {
+            if (symbol != null && !symbol.equals(symbolWithDates.getSymbol())) {
                 continue;
             }
 
-            Date runStartDate = symbolWithDate.getDate();
+            Date runStartDate = symbolWithDates.getStartDate();
 
             if (startDate != null && runStartDate.before(startDate)) {
                 runStartDate = startDate;
@@ -47,7 +47,7 @@ public class CustomStatsDelegate {
             List<Strategy> strategies = new StrategyTester().getCustomStrategiesToTest();
 
             for (Strategy strategy : strategies) {
-                StrategyRunData strategyRunData = getStats(null, symbolWithDate.getSymbol(), runStartDate, strategy, debug);
+                StrategyRunData strategyRunData = getStats(null, symbolWithDates.getSymbol(), runStartDate, strategy, debug);
 
                 StrategyPerformanceTotal strategyPerformanceTotal = createStrategyPerformanceTotal(strategyRunData);
                 strategyPerformanceTotalMap.put(strategyPerformanceTotal.getStrategyPerformanceId(), strategyPerformanceTotal);

@@ -30,6 +30,14 @@ public class FlowPosition implements Serializable {
         itemsMap.put(optionV2.getOptionV2Id().getSymbol(), new Item(optionV2, coeff));
     }
 
+    public int getOptionsCount() {
+        int count = 0;
+        for (Item item : itemsMap.values()) {
+            count = count + Math.abs(item.getCoeff());
+        }
+        return count;
+    }
+
     public void remove(String optionSymbol) {
         itemsMap.remove(optionSymbol);
     }
