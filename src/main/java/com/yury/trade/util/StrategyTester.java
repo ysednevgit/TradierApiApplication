@@ -47,10 +47,9 @@ public class StrategyTester {
 //        strategies.add(getStrategy(new Leg(4, 50, 8), new Leg(-4, 30, 8), new Leg(4, 50, 8, OptionV2.OptionType.put), new Leg(-4, 30, 8, OptionV2.OptionType.put)));
 
         //RATIO_DIAGONAL
-        strategyType = Strategy.StrategyType.SIMPLE;
+        strategyType = Strategy.StrategyType.STRADDLE;
 
-        strategies.add(getStrategy(new Leg(1, 40, 14)));
-        strategies.add(getStrategy(new Leg(1, 30, 6)));
+        strategies.add(getStrategy(new Leg(1, 50, 6), new Leg(1, 50, 6, OptionV2.OptionType.put)));
 
         //strategies.add(getStrategy(new Leg(2, 55, 6), new Leg(-1, 85, 6)));
         //strategies.add(getStrategy(new Leg(4, 80, 400), new Leg(-3, 85, 60), null, null, Strategy.RollingStrategy.ROLL_SAME_STRIKE));
@@ -69,18 +68,37 @@ public class StrategyTester {
     public List<Strategy> getFlowStrategiesToTest() {
         List<Strategy> strategies = new ArrayList<>();
 
-        strategyType = Strategy.StrategyType.BOMB;
-        Strategy strategy = getStrategy(new Leg(1, 20, 14), new Leg(1, 20, 14, OptionV2.OptionType.put),
-                new Leg(-1, 20, 7), new Leg(-1, 20, 7, OptionV2.OptionType.put));
-//        strategy.setBuyDays(Arrays.asList(1, 3, 5));
+//        strategyType = Strategy.StrategyType.STRADDLE;
+//        strategies.add(getStrategy(new Leg(1, 50, 6), new Leg(1, 50, 6, OptionV2.OptionType.put)));
 
-        strategy.setExitStrategy(Strategy.ExitStrategy.SHORT_STRIKE);
 
-        strategies.add(strategy);
+        strategyType = Strategy.StrategyType.RATIO_DIAGONAL;
+
+        //strategies.add(getStrategy(new Leg(20, 20, 300), new Leg(-5, 80, 6)));
+        strategies.add(getStrategy(new Leg(12, 33, 300), new Leg(-4, 80, 5)));
+
+       // strategies.add(getStrategy(new Leg(20, 20, 300), new Leg(-4, 80, 6)));
+//        strategies.add(getStrategy(new Leg(13, 31, 300), new Leg(-4, 80, 6)));
+//        strategies.add(getStrategy(new Leg(8, 50, 300), new Leg(-4, 80, 6)));
+        int days = 5;
+//        addStrategy(strategies, getStrategy(new Leg(2, 45, 6), new Leg(2, 55, 6, OptionV2.OptionType.put)), Arrays.asList());
+        // strategies.add(getStrategy(new Leg(1, 50, days), new Leg(1, 50, days, OptionV2.OptionType.put)));
+
+        /**
+         strategyType = Strategy.StrategyType.BOMB;
+         Strategy strategy = getStrategy(new Leg(1, 25, 10), new Leg(1, 25, 10, OptionV2.OptionType.put), new Leg(-1, 20, 5), new Leg(-1, 20, 5, OptionV2.OptionType.put));
+
+         strategy.setExitStrategy(Strategy.ExitStrategy.SHORT_STRIKE);
+         **/
+
 
         return strategies;
     }
 
+    void addStrategy(List<Strategy> strategies, Strategy strategy, List<Integer> buyDays) {
+        strategy.setBuyDays(buyDays);
+        strategies.add(strategy);
+    }
 
     //for some custom algo testing
     public List<Strategy> getCustomStrategiesToTest() {

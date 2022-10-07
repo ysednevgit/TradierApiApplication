@@ -95,6 +95,7 @@ public class Strategy {
 
     public enum StrategyType {
         RATIO_DIAGONAL,
+        DIAGONAL,
         CALENDAR,
         DOUBLE_CALENDAR,
         STRADDLE,
