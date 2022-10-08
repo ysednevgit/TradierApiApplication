@@ -3,6 +3,7 @@ package com.yury.trade.util;
 import com.yury.trade.entity.OptionV2;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class StrategyTester {
@@ -49,7 +50,7 @@ public class StrategyTester {
         //RATIO_DIAGONAL
         strategyType = Strategy.StrategyType.STRADDLE;
 
-        strategies.add(getStrategy(new Leg(1, 50, 6), new Leg(1, 50, 6, OptionV2.OptionType.put)));
+        strategies.add(getStrategy(new Leg(1, 50, 5), new Leg(1, 50, 5, OptionV2.OptionType.put)));
 
         //strategies.add(getStrategy(new Leg(2, 55, 6), new Leg(-1, 85, 6)));
         //strategies.add(getStrategy(new Leg(4, 80, 400), new Leg(-3, 85, 60), null, null, Strategy.RollingStrategy.ROLL_SAME_STRIKE));
@@ -68,16 +69,24 @@ public class StrategyTester {
     public List<Strategy> getFlowStrategiesToTest() {
         List<Strategy> strategies = new ArrayList<>();
 
-//        strategyType = Strategy.StrategyType.STRADDLE;
-//        strategies.add(getStrategy(new Leg(1, 50, 6), new Leg(1, 50, 6, OptionV2.OptionType.put)));
+        strategyType = Strategy.StrategyType.STRADDLE;
+        strategies.add(getStrategy(new Leg(1, 50, 5), new Leg(1, 50, 5, OptionV2.OptionType.put)));
 
 
         strategyType = Strategy.StrategyType.RATIO_DIAGONAL;
 
         //strategies.add(getStrategy(new Leg(20, 20, 300), new Leg(-5, 80, 6)));
-        strategies.add(getStrategy(new Leg(12, 33, 300), new Leg(-4, 80, 5)));
+        strategies.add(getStrategy(new Leg(16, 25, 300), new Leg(-4, 80, 6)));
 
-       // strategies.add(getStrategy(new Leg(20, 20, 300), new Leg(-4, 80, 6)));
+
+/**
+ Strategy strategy = getStrategy(new Leg(1, 50, 6), new Leg(1, 50, 6, OptionV2.OptionType.put));
+
+ strategy.setBuyDays(Arrays.asList(1, 3));
+
+ strategies.add(strategy);
+ **/
+        // strategies.add(getStrategy(new Leg(20, 20, 300), new Leg(-4, 80, 6)));
 //        strategies.add(getStrategy(new Leg(13, 31, 300), new Leg(-4, 80, 6)));
 //        strategies.add(getStrategy(new Leg(8, 50, 300), new Leg(-4, 80, 6)));
         int days = 5;

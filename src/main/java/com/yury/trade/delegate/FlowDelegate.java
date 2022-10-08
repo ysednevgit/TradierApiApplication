@@ -59,6 +59,8 @@ public class FlowDelegate {
 
     public void getFlow(SymbolWithDates symbolWithDates, boolean debug, boolean drawChart, Strategy strategy) {
 
+        spreads.clear();
+
         String stockSymbol = symbolWithDates.getSymbol();
         Date startDate = symbolWithDates.getStartDate();
         Date endDate = symbolWithDates.getEndDate() != null ? symbolWithDates.getEndDate() : new Date();
@@ -260,6 +262,11 @@ public class FlowDelegate {
 
         flowPerformance.setChartData(chartData);
 
+        addInfoToFlowPerformance(flowPerformance);
+        return flowPerformance;
+    }
+
+    protected void addInfoToFlowPerformance(FlowPerformance flowPerformance) {
         String[] words = flowPerformance.getChartData().split(",");
 
         List<Integer> upMoves = new ArrayList<>();
@@ -293,8 +300,6 @@ public class FlowDelegate {
         flowPerformance.setMedian_down_move(getMedium(downMoves));
         flowPerformance.setMax_up_move(maxUp);
         flowPerformance.setMax_down_move(maxDown);
-
-        return flowPerformance;
     }
 
     private int getAvg(List<Integer> list) {

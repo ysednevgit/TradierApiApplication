@@ -62,9 +62,10 @@ public class MainController {
     @GetMapping("/draw_flow_chart")
     public String drawFlowChart(@RequestParam(value = "symbol", required = false) String symbol,
                                 @RequestParam(value = "startDate") String startDate,
-                                @RequestParam(value = "endDate", required = false) String endDate) throws Exception {
+                                @RequestParam(value = "endDate", required = false) String endDate,
+                                @RequestParam(value = "combo", required = false) boolean combo) throws Exception {
 
-        chartDelegate.drawFlowChart(symbol, startDate, endDate);
+        chartDelegate.drawFlowChart(symbol, startDate, endDate, combo);
 
         return "Success";
     }

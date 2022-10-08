@@ -23,9 +23,12 @@ public class ChartDelegate {
     @Autowired
     private PersistenceDelegate persistenceDelegate;
 
+    @Autowired
+    private FlowDelegate flowDelegate;
+
     private StrategyTester strategyTester = new StrategyTester();
 
-    public void drawFlowChart(final String symbol, final String startDateString, final String endDateString) throws ParseException {
+    public void drawFlowChart(final String symbol, String startDateString, String endDateString, boolean combo) throws ParseException {
 
         Date startDate = startDateString != null ? sdf.parse(startDateString) : null;
         Date endDate = endDateString != null ? sdf.parse(endDateString) : null;
@@ -38,6 +41,24 @@ public class ChartDelegate {
             flowPerformances = persistenceDelegate.getFlowPerformanceRepository().findByParams(symbol, startDate);
         } else {
             flowPerformances = persistenceDelegate.getFlowPerformanceRepository().findByStartDate(startDate);
+        }
+
+        if (combo) {
+            FlowPerformance flowPerformanceCombo = getCombo(flowPerformances);
+            flowDelegate.addInfoToFlowPerformance(flowPerformanceCombo);
+
+            flowPerformanceCombo.setUpdated(new Date());
+            flowPerformanceCombo.setSymbol(symbol);
+            flowPerformanceCombo.setStartDate(startDate);
+            flowPerformanceCombo.setEndDate(endDate);
+
+            endDateString = endDateString == null ? "" : " " + endDateString;
+
+            flowPerformanceCombo.setName("Combo " + symbol + " " + startDateString + endDateString);
+
+            persistenceDelegate.getFlowPerformanceRepository().save(flowPerformanceCombo);
+
+            flowPerformances.add(flowPerformanceCombo);
         }
 
         List<LineChartDataset> lineChartDatasets = getLineChartDatasets(flowPerformances);
@@ -75,10 +96,43 @@ public class ChartDelegate {
             var ex = new LineChartBuilder(symbol, lineChartDatasets);
             ex.setVisible(true);
         });
-
     }
 
-    private List<StrategyPerformanceTotal> getStrategyPerformanceTotals(String symbol, Date startDate, List<String> strategyDescriptions) {
+    private FlowPerformance getCombo(List<FlowPerformance> flowPerformances) {
+
+        FlowPerformance combo = new FlowPerformance();
+
+        List<Integer> chartData = new ArrayList<>();
+
+        for (FlowPerformance flowPerformance : flowPerformances) {
+
+            String[] words = flowPerformance.getChartData().split(",");
+
+            for (int i = 0; i < words.length; i++) {
+
+                Integer wordInt = Integer.parseInt(words[i]);
+
+                if (chartData.size() < words.length) {
+                    chartData.add(wordInt);
+                } else {
+                    chartData.set(i, wordInt + chartData.get(i));
+                }
+            }
+        }
+
+        String comboChartData = chartData.toString().replace("[", "").replace("]", "").replace(" ", "");
+
+        int changeValue = Integer.parseInt(comboChartData.substring(comboChartData.lastIndexOf(",") + 1));
+
+        combo.setChangeValue(changeValue);
+
+        combo.setChartData(comboChartData);
+
+        return combo;
+    }
+
+    private List<StrategyPerformanceTotal> getStrategyPerformanceTotals(String symbol, Date
+            startDate, List<String> strategyDescriptions) {
 
         if (startDate != null && strategyDescriptions != null && strategyDescriptions.size() > 0) {
             return persistenceDelegate.getStrategyPerformanceTotalRepository().find(symbol, startDate, strategyDescriptions);
