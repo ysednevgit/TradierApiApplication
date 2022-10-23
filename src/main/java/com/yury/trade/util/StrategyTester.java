@@ -3,7 +3,6 @@ package com.yury.trade.util;
 import com.yury.trade.entity.OptionV2;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class StrategyTester {
@@ -47,10 +46,8 @@ public class StrategyTester {
 //        strategyType = Strategy.StrategyType.DEBIT_SPREAD;
 //        strategies.add(getStrategy(new Leg(4, 50, 8), new Leg(-4, 30, 8), new Leg(4, 50, 8, OptionV2.OptionType.put), new Leg(-4, 30, 8, OptionV2.OptionType.put)));
 
-        //RATIO_DIAGONAL
-        strategyType = Strategy.StrategyType.STRADDLE;
-
-        strategies.add(getStrategy(new Leg(1, 50, 5), new Leg(1, 50, 5, OptionV2.OptionType.put)));
+        strategyType = Strategy.StrategyType.RATIO_DIAGONAL;
+        strategies.add(getStrategy(new Leg(20, 25, 330), new Leg(-5, 80, 6), null, null, Strategy.RollingStrategy.ROLL_SAME_DELTA));
 
         //strategies.add(getStrategy(new Leg(2, 55, 6), new Leg(-1, 85, 6)));
         //strategies.add(getStrategy(new Leg(4, 80, 400), new Leg(-3, 85, 60), null, null, Strategy.RollingStrategy.ROLL_SAME_STRIKE));
@@ -65,42 +62,29 @@ public class StrategyTester {
         return strategies;
     }
 
+    public Strategy getStraddle(int days) {
+        strategyType = Strategy.StrategyType.STRADDLE;
+        return getStrategy(new Leg(1, 50, days), new Leg(1, 50, days, OptionV2.OptionType.put));
+    }
+
     //for some custom algo testing
     public List<Strategy> getFlowStrategiesToTest() {
         List<Strategy> strategies = new ArrayList<>();
 
-        strategyType = Strategy.StrategyType.STRADDLE;
-        strategies.add(getStrategy(new Leg(1, 50, 5), new Leg(1, 50, 5, OptionV2.OptionType.put)));
-
-
         strategyType = Strategy.StrategyType.RATIO_DIAGONAL;
-
-        //strategies.add(getStrategy(new Leg(20, 20, 300), new Leg(-5, 80, 6)));
-        strategies.add(getStrategy(new Leg(16, 25, 300), new Leg(-4, 80, 6)));
-
+//        strategies.add(getStrategy(new Leg(20, 25, 330), new Leg(-5, 80, 6)));
+        strategies.add(getStrategy(new Leg(20, 25, 330), new Leg(-5, 80, 6)));
+//        strategies.add(getStrategy(new Leg(25, 20, 330), new Leg(-5, 50, 6)));
+//        strategies.add(getStrategy(new Leg(20, 25, 330), new Leg(-5, 80, 8)));
+//        strategies.add(getStrategy(new Leg(16, 25, 330), new Leg(-4, 80, 6)));
 
 /**
- Strategy strategy = getStrategy(new Leg(1, 50, 6), new Leg(1, 50, 6, OptionV2.OptionType.put));
+ strategies.add(getStrategy(new Leg(12, 33, 300), new Leg(-4, 80, 6)));
 
- strategy.setBuyDays(Arrays.asList(1, 3));
 
- strategies.add(strategy);
+ strategyType = Strategy.StrategyType.STRADDLE;
+ strategies.add(getStrategy(new Leg(1, 50, 6), new Leg(1, 50, 6, OptionV2.OptionType.put)));
  **/
-        // strategies.add(getStrategy(new Leg(20, 20, 300), new Leg(-4, 80, 6)));
-//        strategies.add(getStrategy(new Leg(13, 31, 300), new Leg(-4, 80, 6)));
-//        strategies.add(getStrategy(new Leg(8, 50, 300), new Leg(-4, 80, 6)));
-        int days = 5;
-//        addStrategy(strategies, getStrategy(new Leg(2, 45, 6), new Leg(2, 55, 6, OptionV2.OptionType.put)), Arrays.asList());
-        // strategies.add(getStrategy(new Leg(1, 50, days), new Leg(1, 50, days, OptionV2.OptionType.put)));
-
-        /**
-         strategyType = Strategy.StrategyType.BOMB;
-         Strategy strategy = getStrategy(new Leg(1, 25, 10), new Leg(1, 25, 10, OptionV2.OptionType.put), new Leg(-1, 20, 5), new Leg(-1, 20, 5, OptionV2.OptionType.put));
-
-         strategy.setExitStrategy(Strategy.ExitStrategy.SHORT_STRIKE);
-         **/
-
-
         return strategies;
     }
 

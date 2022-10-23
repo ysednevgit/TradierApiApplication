@@ -36,13 +36,15 @@ public class FlowDelegate {
 
     private List<Spread> spreads = new ArrayList<>();
 
+    private StrategyTester strategyTester = new StrategyTester();
+
     public void getFlow(final String symbol, final String startDateString, final String endDateString, boolean debug, boolean drawChart) throws ParseException {
 
         List<SymbolWithDates> symbolsWithDates = getSymbolsWithDates(symbol, startDateString, endDateString);
 
         for (SymbolWithDates symbolWithDates : symbolsWithDates) {
 
-            for (Strategy strategy : new StrategyTester().getFlowStrategiesToTest()) {
+            for (Strategy strategy : strategyTester.getFlowStrategiesToTest()) {
                 getFlow(symbolWithDates, debug, drawChart, strategy);
             }
 
@@ -79,15 +81,18 @@ public class FlowDelegate {
         int maxDrawDown = 0;
         StringBuilder chartData = new StringBuilder();
 
+        int initialValue = 0;
+
         Date date = new Date(startDate.getTime());
         Date lastDate = null;
 
         int durBetweenBuys = 0;
 
         int day = 0;
+        String thetaDescr = "";//"theta -20";
 
         String durStr = durBetweenBuys > 0 ? " dur" + durBetweenBuys : "";
-        String description = stockSymbol + " " + strategy + durStr;
+        String description = stockSymbol + " " + strategy + durStr + thetaDescr;
 
         while (!date.after(endDate)) {
 
@@ -112,7 +117,12 @@ public class FlowDelegate {
 
             updatePosition(position, strategy, debug);
 
-            if (position.itemsMap.size() == 1 || shortStrike + 1 > stockPrice) {
+            int dayOfWeek = getDayOfWeek(convertToLocalDate(date));
+
+            double theta = position.positionTheta * position.contractSize;
+
+//            if (position.itemsMap.size() == 1 || shortStrike + 2 > stockPrice || dayOfWeek == 5) {
+            if (position.itemsMap.size() == 1 || shortStrike + 2 > stockPrice ) {
                 roll(strategy, position, debug);
             }
 
@@ -128,22 +138,7 @@ public class FlowDelegate {
                     return;
                 }
 
-                Spread spread = new Spread();
-                spreads.add(spread);
-
-                for (String leg : strategy.getLegs()) {
-
-                    OptionV2 option = add(Strategy.getDelta(leg), Strategy.getDaysToExpiry(leg), Strategy.getOptionType(leg), dateOptions, position, Strategy.getCoeff(leg), date, debug);
-
-                    if (option == null) {
-                        removeSpread(spread, position, debug);
-                        break;
-                    }
-
-                    spread.add(option.getOptionV2Id().getSymbol());
-                }
-
-                updateSpreads(position, strategy, debug);
+                add(strategy, position, dateOptions, date, debug);
             }
 
             position.calc();
@@ -151,6 +146,10 @@ public class FlowDelegate {
             updateSpreads(position, strategy, debug);
 
             balanceMap.put(new Date(date.getTime()), (int) (position.positionPrice * position.contractSize + position.adjustments));
+
+            if (initialValue == 0) {
+                initialValue = (int) position.positionPrice * position.contractSize;
+            }
 
             maxDrawDown = Math.min(maxDrawDown, balanceMap.get(date));
             chartData.append(balanceMap.get(date)).append(",");
@@ -169,7 +168,7 @@ public class FlowDelegate {
         }
         chartData.deleteCharAt(chartData.lastIndexOf(","));
 
-        FlowPerformance flowPerformance = createFlowPerformance(symbolWithDates, lastDate, stockHistoryMap, maxDrawDown, chartData.toString(), description);
+        FlowPerformance flowPerformance = createFlowPerformance(symbolWithDates, lastDate, stockHistoryMap, maxDrawDown, chartData.toString(), description, initialValue);
 
         persistenceDelegate.getFlowPerformanceRepository().save(flowPerformance);
 
@@ -180,6 +179,23 @@ public class FlowDelegate {
             chartDelegate.drawChart(stockSymbol, datasets);
         }
 
+    }
+
+    private void add(Strategy strategy, FlowPosition position, List<OptionV2> dateOptions, Date date, boolean debug) {
+        Spread spread = new Spread();
+        spreads.add(spread);
+
+        for (String leg : strategy.getLegs()) {
+
+            OptionV2 option = add(Strategy.getDelta(leg), Strategy.getDaysToExpiry(leg), Strategy.getOptionType(leg), dateOptions, position, Strategy.getCoeff(leg), date, debug);
+
+            if (option == null) {
+                removeSpread(spread, position, debug);
+                break;
+            }
+
+            spread.add(option.getOptionV2Id().getSymbol());
+        }
     }
 
     private boolean shouldAdd(Strategy strategy, FlowPosition position, Date date) {
@@ -240,7 +256,14 @@ public class FlowDelegate {
         spreads.remove(spread);
     }
 
-    private FlowPerformance createFlowPerformance(SymbolWithDates symbolWithDates, Date lastDate, Map<Date, Double> stockHistoryMap, int maxDrawDown, String chartData, String descr) {
+    private FlowPerformance createFlowPerformance(
+            SymbolWithDates symbolWithDates,
+            Date lastDate,
+            Map<Date, Double> stockHistoryMap,
+            int maxDrawDown,
+            String chartData,
+            String descr,
+            int initialPrice) {
 
         String stockSymbol = symbolWithDates.getSymbol();
         Date startDate = symbolWithDates.getStartDate();
@@ -253,6 +276,8 @@ public class FlowDelegate {
         flowPerformance.setChangeValue(balanceMap.get(lastDate));
         flowPerformance.setStockChange(Precision.round(stockHistoryMap.get(lastDate) / stockHistoryMap.get(startDate), 2));
         flowPerformance.setMaxDrawDown(maxDrawDown);
+        flowPerformance.setInitialValue(initialPrice);
+        flowPerformance.setChange(Precision.round((double) flowPerformance.getChangeValue() / initialPrice, 2));
         flowPerformance.setUpdated(new Date());
 
         String endDateStr = symbolWithDates.getEndDate() != null ? " to " + sdf.format(endDate) : "";
@@ -326,7 +351,7 @@ public class FlowDelegate {
         OptionV2 option = statsDelegate.getClosest(delta, daysToExpiry, optionType, null, null, options);
 
         if (option.getMid_price() == 0) {
-            return option;
+            return repeatAdd(delta, daysToExpiry, optionType, options, position, coeff, date, debug);
         }
 
         if (!position.optionsByOptionSymbolMap.containsKey(option.getOptionV2Id().getSymbol())) {
@@ -334,7 +359,7 @@ public class FlowDelegate {
             List<OptionV2> optionsByOptionSymbol = persistenceDelegate.getOptionRepository().findByOptionV2IdSymbolWithGreaterOrSameUpdated(option.getOptionV2Id().getSymbol(), date);
 
             if (optionsByOptionSymbol.size() < 2) {
-                return null;
+                return repeatAdd(delta, daysToExpiry, optionType, options, position, coeff, date, debug);
             }
             position.optionsByOptionSymbolMap.put(option.getOptionV2Id().getSymbol(), optionsByOptionSymbol);
         }
@@ -347,6 +372,18 @@ public class FlowDelegate {
         }
 
         return option;
+    }
+
+    private OptionV2 repeatAdd(double delta, final int daysToExpiry, final OptionV2.OptionType optionType, final List<OptionV2> options, FlowPosition position, int coeff, Date date, boolean debug) {
+        Date copyDate = new Date(date.getTime());
+
+        addDays(copyDate, daysToExpiry);
+
+        if (copyDate.before(new Date())) {
+            return add(delta, daysToExpiry + 1, optionType, options, position, coeff, date, debug);
+        }
+
+        return null;
     }
 
     protected void remove(FlowPosition position, String optionSymbol, boolean debug) {
@@ -512,13 +549,12 @@ public class FlowDelegate {
 
                 double totalDelta = longDelta + newCoeff * shortDelta;
 
-/*
-                if (totalDelta <= 25) {
+/**
+                if (totalDelta <= 40) {
                     newCoeff++;
                     shortDelta += 5;
                 }
-
- */
+**/
 
             }
 
@@ -534,6 +570,7 @@ public class FlowDelegate {
                 }
 
                 add(shortDelta, daysToExpiry, OptionV2.OptionType.call, dateOptions, position, newCoeff, date, debug);
+
                 break;
             }
         }
@@ -541,6 +578,7 @@ public class FlowDelegate {
         for (String optionsSymbolToRemove : optionsSymbolsToRemove) {
             remove(position, optionsSymbolToRemove, debug);
         }
+
 
     }
 

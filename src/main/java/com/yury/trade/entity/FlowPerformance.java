@@ -23,6 +23,10 @@ public class FlowPerformance {
 
     private Integer changeValue;
 
+    private Integer initialValue;
+
+    private Double change;
+
     private String symbol;//SPY
 
     @Lob

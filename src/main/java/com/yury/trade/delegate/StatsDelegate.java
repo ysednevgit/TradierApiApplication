@@ -546,6 +546,10 @@ public class StatsDelegate {
                 continue;
             }
 
+            if (optionV2.getDays_left() == 1) {
+                continue;
+            }
+
             if (result == null) {
 
                 result = optionV2;
