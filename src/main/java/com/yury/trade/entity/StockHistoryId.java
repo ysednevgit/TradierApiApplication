@@ -16,4 +16,6 @@ public class StockHistoryId implements Serializable {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date date;//"2023-01-20",
 
+
+
 }

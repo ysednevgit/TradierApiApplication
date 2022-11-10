@@ -88,16 +88,9 @@ public class MainController {
 
     @GetMapping("/get_custom_stats")
     public String getCustomStats(@RequestParam(value = "symbol", required = false) String symbol,
-                                 @RequestParam(value = "startDate", required = false) String startDate,
-                                 @RequestParam(value = "debug", required = false) boolean debug,
-                                 @RequestParam(value = "test", required = false) boolean test,
-                                 @RequestParam(value = "drawChart", required = false) boolean drawChart) throws Exception {
+                                 @RequestParam(value = "startDate", required = false) String startDate) throws ParseException {
 
-        customStatsDelegate.getStats(symbol, startDate, debug, test);
-
-        if (drawChart) {
-            chartDelegate.drawChart(symbol, startDate, test);
-        }
+        customStatsDelegate.getStats(symbol, startDate);
 
         return "Success";
     }

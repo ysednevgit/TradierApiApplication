@@ -5,10 +5,7 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.text.DecimalFormat;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class FlowPosition implements Serializable {
 
@@ -17,6 +14,8 @@ public class FlowPosition implements Serializable {
     public Map<String, Item> itemsMap = new LinkedHashMap<>();
 
     public Map<String, List<OptionV2>> optionsByOptionSymbolMap = new HashMap<>();
+
+    public List<Integer> coeffsHistory = new LinkedList<>();
 
     public int contractSize = 100;
 
