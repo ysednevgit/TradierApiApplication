@@ -13,10 +13,10 @@ public class StrategyTester {
         List<Strategy> strategies = new ArrayList<>();
         // top strats
 
- //RATIO_DIAGONAL
- strategyType = Strategy.StrategyType.RATIO_DIAGONAL;
+        //RATIO_DIAGONAL
+        strategyType = Strategy.StrategyType.RATIO_DIAGONAL;
 
- strategies.add(getStrategy(new Leg(3, 55, 300), new Leg(-2, 80, 6), null, null, Strategy.RollingStrategy.ROLL_SAME_STRIKE));
+        strategies.add(getStrategy(new Leg(4, 55, 300), new Leg(-2, 80, 8), null, null, Strategy.RollingStrategy.ROLL_SAME_STRIKE));
 /**
  //DOUBLE_CALENDAR
  strategyType = Strategy.StrategyType.DOUBLE_CALENDAR;
@@ -24,17 +24,17 @@ public class StrategyTester {
  **/
 
 /**
-        //STRADDLE
-        strategyType = Strategy.StrategyType.STRADDLE;
-        strategies.add(getStrategy(new Leg(1, 50, 10), new Leg(1, 50, 10, OptionV2.OptionType.put)));
-        strategies.add(getStrategy(new Leg(1, 50, 10), new Leg(1, 50, 10, OptionV2.OptionType.put), null, null, null, Strategy.ProfitExitStrategy._50_PERCENT_PROFIT));
-        strategies.add(getStrategy(new Leg(1, 50, 14), new Leg(1, 50, 14, OptionV2.OptionType.put)));
-        strategies.add(getStrategy(new Leg(1, 50, 14), new Leg(1, 50, 14, OptionV2.OptionType.put), null, null, null, Strategy.ProfitExitStrategy._50_PERCENT_PROFIT));
+ //STRADDLE
+ strategyType = Strategy.StrategyType.STRADDLE;
+ strategies.add(getStrategy(new Leg(1, 50, 10), new Leg(1, 50, 10, OptionV2.OptionType.put)));
+ strategies.add(getStrategy(new Leg(1, 50, 10), new Leg(1, 50, 10, OptionV2.OptionType.put), null, null, null, Strategy.ProfitExitStrategy._50_PERCENT_PROFIT));
+ strategies.add(getStrategy(new Leg(1, 50, 14), new Leg(1, 50, 14, OptionV2.OptionType.put)));
+ strategies.add(getStrategy(new Leg(1, 50, 14), new Leg(1, 50, 14, OptionV2.OptionType.put), null, null, null, Strategy.ProfitExitStrategy._50_PERCENT_PROFIT));
 
-        //SIMPLE
-        strategyType = Strategy.StrategyType.SIMPLE;
-        strategies.add(getStrategy(new Leg(1, 20, 14, OptionV2.OptionType.put)));
-**/
+ //SIMPLE
+ strategyType = Strategy.StrategyType.SIMPLE;
+ strategies.add(getStrategy(new Leg(1, 20, 14, OptionV2.OptionType.put)));
+ **/
         return strategies;
     }
 
@@ -42,11 +42,21 @@ public class StrategyTester {
     public List<Strategy> getTestStrategiesToTest() {
         List<Strategy> strategies = new ArrayList<>();
 
+        int days = 60;
+        int coeff = 1;
+        int delta = 15;
+
+        strategyType = Strategy.StrategyType.STRADDLE;
+        strategies.add(getStrategy(new Leg(coeff, delta, days), new Leg(coeff, delta, days, OptionV2.OptionType.put)));
+
+
+//        strategies.add(getStrategy(new Leg(4, 20, 500, OptionV2.OptionType.put), new Leg(-4, 20, 60, OptionV2.OptionType.put),null, null, Strategy.RollingStrategy.ROLL_SAME_STRIKE));;
+
 //        strategyType = Strategy.StrategyType.DEBIT_SPREAD;
 //        strategies.add(getStrategy(new Leg(4, 50, 8), new Leg(-4, 30, 8), new Leg(4, 50, 8, OptionV2.OptionType.put), new Leg(-4, 30, 8, OptionV2.OptionType.put)));
 
-        strategyType = Strategy.StrategyType.SIMPLE;
-        strategies.add(getStrategy(new Leg(1, 20, 14, OptionV2.OptionType.put)));
+//        strategyType = Strategy.StrategyType.SIMPLE;
+//        strategies.add(getStrategy(new Leg(1, 20, 14, OptionV2.OptionType.put)));
 
         //strategies.add(getStrategy(new Leg(2, 55, 6), new Leg(-1, 85, 6)));
         //strategies.add(getStrategy(new Leg(4, 80, 400), new Leg(-3, 85, 60), null, null, Strategy.RollingStrategy.ROLL_SAME_STRIKE));
@@ -65,18 +75,67 @@ public class StrategyTester {
     public List<Strategy> getFlowStrategiesToTest() {
         List<Strategy> strategies = new ArrayList<>();
 
-        int coeff = 3;
-        int days = 2;
-        int delta = 50;
 
-//        strategyType = Strategy.StrategyType.STRADDLE;
-//        strategies.add(getStrategy(new Leg(coeff, delta, days), new Leg(coeff, delta, days, OptionV2.OptionType.put)));
+//        strategies.add(strategy1);
 
 //        delta = 30;
 //        strategies.add(getStrategy(new Leg(coeff, delta, days), new Leg(coeff, delta, days, OptionV2.OptionType.put)));
 
-        strategyType = Strategy.StrategyType.RATIO_DIAGONAL;
-        strategies.add(getStrategy(new Leg(20, 25, 330), new Leg(-5, 80, 6)));
+//        strategyType = Strategy.StrategyType.RATIO_DIAGONAL;
+//        strategies.add(getStrategy(new Leg(12, 41, 330), new Leg(-5, 80, 8)));
+//        strategies.add(getStrategy(new Leg(20, 25, 330), new Leg(-5, 80, 8)));
+
+        int days = 45;
+        int coeff = -1;
+        int delta = 25;
+
+        strategyType = Strategy.StrategyType.STRADDLE;
+
+        days = 60;
+
+        delta = 20;
+        //strategies.add(getStrategy(new Leg(coeff, delta, days), new Leg(coeff, delta, days, OptionV2.OptionType.put)));
+
+        //strategyType = Strategy.StrategyType.STRADDLE;
+        //strategies.add(getStrategy(new Leg(1, 70, 550)));
+
+        strategyType = Strategy.StrategyType.DIAGONAL;
+        Strategy strategy1 = getStrategy(new Leg(4, 80, 550), new Leg(-4, 80, 60));
+        strategy1.setExitStrategy(Strategy.ExitStrategy.SHORT_STRIKE);
+        strategy1.setRollingStrategy(Strategy.RollingStrategy.ROLL_SAME_STRIKE);
+        strategies.add(strategy1);
+
+        Strategy strategy2 = getStrategy(new Leg(4, 80, 550), new Leg(-4, 70, 60));
+        strategy2.setExitStrategy(Strategy.ExitStrategy.SHORT_STRIKE);
+        strategy2.setRollingStrategy(Strategy.RollingStrategy.ROLL_SAME_STRIKE);
+        strategies.add(strategy2);
+
+/**
+ strategyType = Strategy.StrategyType.STRADDLE;
+ Strategy strategy1 = getStrategy(new Leg(coeff, delta, days), new Leg(coeff, delta, days, OptionV2.OptionType.put));
+ strategy1.setBuyDays(Arrays.asList(4));
+
+ days = 5;
+ Strategy strategy2 = getStrategy(new Leg(coeff, delta, days), new Leg(coeff, delta, days, OptionV2.OptionType.put));
+ strategy2.setBuyDays(Arrays.asList(4));
+ strategy2.setSellDays(Arrays.asList(1,2));
+
+ strategies.add(strategy1);
+ strategies.add(strategy2);
+ **/
+
+//        strategyType = Strategy.StrategyType.RATIO_DIAGONAL;
+//        strategies.add(getStrategy(new Leg(20, 25, 330), new Leg(-6, 70, 5)));
+
+
+//        strategies.add(getStrategy(new Leg(1, 20, 14), new Leg(-1, 0, 7), new Leg(1, 20, 14, OptionV2.OptionType.put), new Leg(-1, 0, 7, OptionV2.OptionType.put)));
+
+//        strategyType = Strategy.StrategyType.CUSTOM;
+//        strategies.add(getStrategy(new Leg(2, 50, 14), new Leg(-1, 80, 3)));
+
+        //        strategies.add(getStrategy(new Leg(1, 80, 14), new Leg(-1, 50, 7)));
+
+//        strategies.add(getStrategy(new Leg(20, 25, 330), new Leg(-6, 80, 8)));
 
         //        strategies.add(getStrategy(new Leg(20, 25, 330), new Leg(-5, 80, 8)));
 //        strategies.add(getStrategy(new Leg(20, 25, 130), new Leg(-5, 80, 6)));
@@ -108,6 +167,11 @@ public class StrategyTester {
         strategies.add(getStrategy(new Leg(6, 50, 200), new Leg(-3, 85, 7), null, null, Strategy.RollingStrategy.ROLL_SAME_STRIKE));
 
         return strategies;
+    }
+
+    private Strategy.RollingStrategy getRollingStrategy(Strategy.RollingStrategy rollingStrategy, int minDays) {
+        rollingStrategy.setMinDays(minDays);
+        return rollingStrategy;
     }
 
     private Strategy getStrategy(Leg leg1) {

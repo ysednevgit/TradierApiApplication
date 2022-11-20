@@ -156,6 +156,8 @@ public class StatsDelegate {
 
             stepDate = legOptionsList.get(0).get(i).getGreeks_updated_at();
 
+            double stockPrice = stockHistoryMap.get(stepDate);
+
             // int rsi = getRSI(stockHistoryMap, 7, stepDate);
 
             position.daysRun++;
@@ -172,6 +174,21 @@ public class StatsDelegate {
                     if (Strategy.RollingStrategy.NONE.equals(strategy.getRollingStrategy())) {
                         shouldBreak = true;
                         break;
+                    }
+
+                    if (Strategy.ExitStrategy.SHORT_STRIKE.equals(strategy.getExitStrategy())) {
+                        OptionV2 originalOption = legOptionsList_j.get(i - 1);
+
+                        double strike = originalOption.getStrike();
+
+                        if (stockPrice <= strike) {
+
+                            if (debug) {
+                                System.out.println("Short strike reached, closing position");
+                                return getStats(strategyRunData, stockSymbol, stepDate, strategy, debug);
+                            }
+                            break;
+                        }
                     }
 
                     if (!rollPosition(position, strategy, legOptionsList_j, i, j)) {
@@ -215,7 +232,6 @@ public class StatsDelegate {
                 strategyRunData.setInitialStockPrice(initialStockPrice);
             }
 
-            double stockPrice = stockHistoryMap.get(stepDate);
             double changeValue = (position.positionPrice - initialPrice) * position.contractSize - position.adjustments;
 
             thetaTotal += position.positionTheta * position.contractSize;
@@ -435,6 +451,9 @@ public class StatsDelegate {
         List<OptionV2> newOptions = persistenceDelegate.getOptionRepository().findByOptionV2IdSymbolWithGreaterUpdated(newOption.getOptionV2Id().getSymbol(), originalOption.getGreeks_updated_at());
 
         legOptionsList_j.addAll(newOptions);
+
+        System.out.println("Rolling");
+
 
         return true;
     }

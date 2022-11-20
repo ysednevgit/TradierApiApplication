@@ -19,6 +19,8 @@ public class FlowPosition implements Serializable {
 
     public int contractSize = 100;
 
+    public Double shortStrike;
+
     public double positionDelta = 0;
     public double positionTheta = 0;
     public double positionGamma = 0;
@@ -27,6 +29,10 @@ public class FlowPosition implements Serializable {
 
     public void add(OptionV2 optionV2, int coeff) {
         itemsMap.put(optionV2.getOptionV2Id().getSymbol(), new Item(optionV2, coeff));
+
+        if (coeff < 0) {
+            shortStrike = optionV2.getStrike();
+        }
     }
 
     public int getOptionsCount() {

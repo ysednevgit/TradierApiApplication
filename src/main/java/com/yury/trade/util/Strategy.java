@@ -27,6 +27,8 @@ public class Strategy {
 
     private List<Integer> buyDays = new ArrayList<>();
 
+    private List<Integer> sellDays = new ArrayList<>();
+
     //list of 1 C 20 300  - means buy 1 call 20 delta with 300 days out
     private List<String> legs = new ArrayList<>();
 
@@ -64,19 +66,39 @@ public class Strategy {
     @Override
     public String toString() {
 
-        String rs = !RollingStrategy.NONE.equals(rollingStrategy) ? rollingStrategy.name() + " " : "";
-        String es = !ProfitExitStrategy.NONE.equals(profitExitStrategy) ? profitExitStrategy.name() : "";
+        String rs = !RollingStrategy.NONE.equals(rollingStrategy) ? rollingStrategy + " " : "";
+        String pes = !ProfitExitStrategy.NONE.equals(profitExitStrategy) ? profitExitStrategy.name() : "";
+        String es = !ExitStrategy.NONE.equals(exitStrategy) ? exitStrategy.name() : "";
         String des = description != null ? description : "";
         String bd = buyDays.size() > 0 ? " " + buyDays : "";
 
 
-        return "Strategy{" + name + " " + des + rs + es + bd + "}";
+        return "Strategy{" + name + " " + des + rs + es + pes + bd + "}";
     }
 
     public enum RollingStrategy {
         ROLL_SAME_STRIKE,
         ROLL_SAME_DELTA,
-        NONE
+        CUSTOM,
+        WHEN_ITM,
+        NONE;
+
+        private int minDays = 0;
+
+        public int getMinDays() {
+            return minDays;
+        }
+
+        public void setMinDays(int minDays) {
+            this.minDays = minDays;
+        }
+
+        @Override
+        public String toString() {
+            String minDaysStr = getMinDays() > 0 ? "(" + getMinDays() + ")" : "";
+
+            return name() + minDaysStr;
+        }
     }
 
     public enum ProfitExitStrategy {
@@ -90,6 +112,7 @@ public class Strategy {
 
     public enum ExitStrategy {
         SHORT_STRIKE,
+        LONG_STRIKE,
         NONE
     }
 

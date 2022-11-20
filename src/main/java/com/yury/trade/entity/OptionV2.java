@@ -10,7 +10,6 @@ import java.util.Date;
 
 @Entity
 @Data
-@Cacheable
 public class OptionV2 implements Serializable {
 
     @Transient

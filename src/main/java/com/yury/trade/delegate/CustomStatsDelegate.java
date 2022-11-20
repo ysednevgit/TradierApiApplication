@@ -41,7 +41,7 @@ public class CustomStatsDelegate {
 
         for (String stockSymbol : symbols) {
             getStats(stockSymbol, startDate);
-            testBigMove(symbol, startDate);
+            //testBigMove(symbol, startDate);
         }
 
     }
