@@ -75,6 +75,16 @@ public class StrategyTester {
     public List<Strategy> getFlowStrategiesToTest() {
         List<Strategy> strategies = new ArrayList<>();
 
+        strategyType = Strategy.StrategyType.CUSTOM;
+        strategies.add(getStrategy(new Leg(2, 25, 8), new Leg(1, 50, 8, OptionV2.OptionType.put), new Leg(-1, 25, 8, OptionV2.OptionType.put)));
+        strategies.add(getStrategy(new Leg(2, 25, 8), new Leg(1, 50, 8, OptionV2.OptionType.put), new Leg(-2, 25, 8, OptionV2.OptionType.put)));
+//        strategies.add(getStrategy(new Leg(2, 25, 8)));
+//        strategies.add(getStrategy(new Leg(1, 50, 8), new Leg(1, 50, 8, OptionV2.OptionType.put)));
+
+//        Strategy strategy2 = getStrategy(new Leg(-2, 27, 8, OptionV2.OptionType.put));
+//        strategy2.setExitStrategy(Strategy.ExitStrategy.SHORT_STRIKE);
+//        strategies.add(strategy2);
+
 
 //        strategies.add(strategy1);
 
@@ -82,34 +92,24 @@ public class StrategyTester {
 //        strategies.add(getStrategy(new Leg(coeff, delta, days), new Leg(coeff, delta, days, OptionV2.OptionType.put)));
 
 //        strategyType = Strategy.StrategyType.RATIO_DIAGONAL;
-//        strategies.add(getStrategy(new Leg(12, 41, 330), new Leg(-5, 80, 8)));
+//        strategies.add(getStrategy(new Leg(20, 25, 330), new Leg(-4, 80, 8), null, null, Strategy.RollingStrategy.CUSTOM));
 //        strategies.add(getStrategy(new Leg(20, 25, 330), new Leg(-5, 80, 8)));
 
-        int days = 45;
-        int coeff = -1;
-        int delta = 25;
 
-        strategyType = Strategy.StrategyType.STRADDLE;
+/**
+ strategyType = Strategy.StrategyType.SIMPLE;
+ strategies.add(getStrategy(new Leg(1, 70, 530)));
+ strategyType = Strategy.StrategyType.STRADDLE;
+ strategies.add(getStrategy(new Leg(-1, 25, 60), new Leg(-1, 25, 60, OptionV2.OptionType.put), null, null, null, null, Strategy.ExitStrategy.SHORT_STRIKE));
+ strategyType = Strategy.StrategyType.DIAGONAL;
+ strategies.add(getStrategy(new Leg(2, 80, 530), new Leg(-2, 80, 60), null, null, Strategy.RollingStrategy.ROLL_SAME_STRIKE, null, Strategy.ExitStrategy.SHORT_STRIKE));
 
-        days = 60;
+ delta = 20;
+ //strategies.add(getStrategy(new Leg(coeff, delta, days), new Leg(coeff, delta, days, OptionV2.OptionType.put)));
 
-        delta = 20;
-        //strategies.add(getStrategy(new Leg(coeff, delta, days), new Leg(coeff, delta, days, OptionV2.OptionType.put)));
-
-        //strategyType = Strategy.StrategyType.STRADDLE;
-        //strategies.add(getStrategy(new Leg(1, 70, 550)));
-
-        strategyType = Strategy.StrategyType.DIAGONAL;
-        Strategy strategy1 = getStrategy(new Leg(4, 80, 550), new Leg(-4, 80, 60));
-        strategy1.setExitStrategy(Strategy.ExitStrategy.SHORT_STRIKE);
-        strategy1.setRollingStrategy(Strategy.RollingStrategy.ROLL_SAME_STRIKE);
-        strategies.add(strategy1);
-
-        Strategy strategy2 = getStrategy(new Leg(4, 80, 550), new Leg(-4, 70, 60));
-        strategy2.setExitStrategy(Strategy.ExitStrategy.SHORT_STRIKE);
-        strategy2.setRollingStrategy(Strategy.RollingStrategy.ROLL_SAME_STRIKE);
-        strategies.add(strategy2);
-
+ //strategyType = Strategy.StrategyType.STRADDLE;
+ //strategies.add(getStrategy(new Leg(1, 70, 550)));
+ **/
 /**
  strategyType = Strategy.StrategyType.STRADDLE;
  Strategy strategy1 = getStrategy(new Leg(coeff, delta, days), new Leg(coeff, delta, days, OptionV2.OptionType.put));
@@ -195,6 +195,10 @@ public class StrategyTester {
     }
 
     private Strategy getStrategy(Leg leg1, Leg leg2, Leg leg3, Leg leg4, Strategy.RollingStrategy rollingStrategy, Strategy.ProfitExitStrategy profitExitStrategy) {
+        return getStrategy(leg1, leg2, leg3, leg4, rollingStrategy, profitExitStrategy, null);
+    }
+
+    private Strategy getStrategy(Leg leg1, Leg leg2, Leg leg3, Leg leg4, Strategy.RollingStrategy rollingStrategy, Strategy.ProfitExitStrategy profitExitStrategy, Strategy.ExitStrategy exitStrategy) {
         String leg1string = leg1.toString();
 
         String leg2string = leg2 != null ? leg2.toString() : null;
@@ -215,6 +219,10 @@ public class StrategyTester {
 
         if (profitExitStrategy != null) {
             strategy.setProfitExitStrategy(profitExitStrategy);
+        }
+
+        if (exitStrategy != null) {
+            strategy.setExitStrategy(exitStrategy);
         }
 
         if (strategyType != null) {

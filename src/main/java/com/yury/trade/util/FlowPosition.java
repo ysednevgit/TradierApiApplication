@@ -43,10 +43,6 @@ public class FlowPosition implements Serializable {
         return count;
     }
 
-    public void remove(String optionSymbol) {
-        itemsMap.remove(optionSymbol);
-    }
-
     @Override
     public String toString() {
         return "delta=" + df2.format(contractSize * positionDelta) +

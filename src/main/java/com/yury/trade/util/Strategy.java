@@ -78,6 +78,7 @@ public class Strategy {
 
     public enum RollingStrategy {
         ROLL_SAME_STRIKE,
+        ROLL_SAME_EXPIRATION,
         ROLL_SAME_DELTA,
         CUSTOM,
         WHEN_ITM,
@@ -95,7 +96,7 @@ public class Strategy {
 
         @Override
         public String toString() {
-            String minDaysStr = getMinDays() > 0 ? "(" + getMinDays() + ")" : "";
+            String minDaysStr = getMinDays() > 0 ? "(min " + getMinDays() + "days)" : "";
 
             return name() + minDaysStr;
         }
@@ -112,12 +113,12 @@ public class Strategy {
 
     public enum ExitStrategy {
         SHORT_STRIKE,
-        LONG_STRIKE,
         NONE
     }
 
     public enum StrategyType {
         RATIO_DIAGONAL,
+        RATIO_DIAGONAL_2by1,
         DIAGONAL,
         CALENDAR,
         DOUBLE_CALENDAR,

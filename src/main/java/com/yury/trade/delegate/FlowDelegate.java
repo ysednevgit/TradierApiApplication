@@ -36,8 +36,6 @@ public class FlowDelegate {
 
     private Map<Date, Integer> balanceMap = new LinkedHashMap<>();
 
-    private List<Spread> spreads = new ArrayList<>();
-
     private StrategyTester strategyTester = new StrategyTester();
 
     private Calendar calendar = Calendar.getInstance();
@@ -58,8 +56,6 @@ public class FlowDelegate {
     }
 
     public void getFlow(SymbolWithDates symbolWithDates, boolean debug, boolean drawChart, Strategy strategy) {
-
-        spreads.clear();
 
         String stockSymbol = symbolWithDates.getSymbol();
         Date startDate = symbolWithDates.getStartDate();
@@ -96,9 +92,18 @@ public class FlowDelegate {
                 continue;
             }
 
+            Double stockPrice = stockHistoryMap.get(date);
+
             if (debug) {
-                System.out.println(sdf.format(date) + " Stock Price: " + stockHistoryMap.get(date));
+                System.out.println(sdf.format(date) + " Stock Price: " + stockPrice);
             }
+
+            int shortStrike = 0;
+
+            if (position.itemsMap.size() == 2) {
+                shortStrike = position.itemsMap.values().stream().collect(Collectors.toList()).get(1).getOptionV2().getStrike().intValue();
+            }
+
 
             updatePosition(position, strategy, debug);
 
@@ -106,13 +111,11 @@ public class FlowDelegate {
 
             double theta = position.positionTheta * position.contractSize;
 
-            if (position.itemsMap.size() == 1) {
+            if (position.itemsMap.size() == 1 || (Strategy.StrategyType.RATIO_DIAGONAL.equals(strategy.getStrategyType()) && shortStrike + 2 > stockPrice)) {
                 roll(strategy, position, debug);
             }
 
             exitPositionWhenStrike(strategy, position, stockHistoryMap.get(date), debug);
-
-            updateSpreads(position, strategy, debug);
 
             if (shouldAdd(strategy, position, date)) {
 
@@ -125,13 +128,11 @@ public class FlowDelegate {
                 add(strategy, position, dateOptions, date, debug);
             }
 
-            if (strategy.getSellDays().contains(dayOfWeek) && spreads.size() > 0) {
-                removeSpread(spreads.get(0), position, debug);
+            if (strategy.getSellDays().contains(dayOfWeek)) {
+                remove(position, debug);
             }
 
             position.calc();
-
-            updateSpreads(position, strategy, debug);
 
             balanceMap.put(new Date(date.getTime()), (int) (position.positionPrice * position.contractSize + position.adjustments));
 
@@ -153,6 +154,11 @@ public class FlowDelegate {
             lastDate = new Date(date.getTime());
 
             addDays(date, 1);
+
+            if (debug)
+            {
+                System.out.println();
+            }
         }
         chartData.deleteCharAt(chartData.lastIndexOf(","));
 
@@ -170,19 +176,14 @@ public class FlowDelegate {
     }
 
     private void add(Strategy strategy, FlowPosition position, List<OptionV2> dateOptions, Date date, boolean debug) {
-        Spread spread = new Spread();
-        spreads.add(spread);
 
         for (String leg : strategy.getLegs()) {
 
             OptionV2 option = add(Strategy.getDelta(leg), Strategy.getDaysToExpiry(leg), Strategy.getOptionType(leg), dateOptions, position, Strategy.getCoeff(leg), date, debug);
 
             if (option == null) {
-                removeSpread(spread, position, debug);
                 break;
             }
-
-            spread.add(option.getOptionV2Id().getSymbol());
         }
     }
 
@@ -202,51 +203,6 @@ public class FlowDelegate {
         }
 
         return false;
-    }
-
-    private void updateSpreads(FlowPosition position, Strategy strategy, boolean debug) {
-
-        if (!Strategy.RollingStrategy.NONE.equals(strategy.getStrategyType())) {
-            return;
-        }
-
-        List<Spread> spreadsToRemove = new ArrayList<>();
-
-        for (Spread spread : spreads) {
-            int price = 0;
-
-            for (String optionSymbol : spread.optionSymbols) {
-
-                if (position.itemsMap.get(optionSymbol) == null) {
-                    spreadsToRemove.add(spread);
-                    break;
-                }
-                price += position.itemsMap.get(optionSymbol).getOptionV2().getMid_price() * position.contractSize;
-            }
-
-            if (spread.getInitialPrice() == 0) {
-                spread.setInitialPrice(price);
-            }
-            spread.setPrice(price);
-
-            if (Strategy.ProfitExitStrategy._20_PERCENT_PROFIT.equals(strategy.getProfitExitStrategy()) && spread.getPrice() > 1.2 * spread.getInitialPrice()) {
-
-                spreadsToRemove.add(spread);
-
-            }
-        }
-
-        for (Spread spread : spreadsToRemove) {
-            removeSpread(spread, position, debug);
-        }
-    }
-
-    private void removeSpread(Spread spread, FlowPosition position, boolean debug) {
-
-        for (String optionSymbol : spread.optionSymbols) {
-            remove(position, optionSymbol, debug);
-        }
-        spreads.remove(spread);
     }
 
     private FlowPerformance createFlowPerformance(
@@ -404,6 +360,16 @@ public class FlowDelegate {
         }
     }
 
+    protected void remove(FlowPosition position, boolean debug) {
+
+        List<String> optionSymbols = new ArrayList<>();
+        optionSymbols.addAll(position.itemsMap.keySet());
+
+        for (String optionSymbol : optionSymbols) {
+            remove(position, optionSymbol, debug);
+        }
+    }
+
     protected void remove(FlowPosition position, String optionSymbol, boolean debug) {
 
         FlowPosition.Item item = position.itemsMap.get(optionSymbol);
@@ -414,7 +380,7 @@ public class FlowDelegate {
 
         position.adjustments += item.getCoeff() * item.getOptionV2().getMid_price() * position.contractSize;
 
-        position.remove(optionSymbol);
+        position.itemsMap.remove(optionSymbol);
         position.optionsByOptionSymbolMap.remove(optionSymbol);
 
         if (debug) {
@@ -480,27 +446,22 @@ public class FlowDelegate {
             if (item.getIndex() == optionsByOptionSymbol.size() - 1) {
                 optionsSymbolsToRemove.add(optionSymbol);
             }
-        }
 
-        for (String optionsSymbolToRemove : optionsSymbolsToRemove) {
-
-            if (strategy.getRollingStrategy().equals(Strategy.RollingStrategy.WHEN_ITM) &&
-                    position.itemsMap.get(optionsSymbolToRemove).getOptionV2().getMid_price() * position.contractSize < 30) {
-
-                for (Spread spread : spreads) {
-                    if (spread.getOptionSymbols().contains(optionsSymbolToRemove)) {
-                        spread.getOptionSymbols().remove(optionsSymbolToRemove);
-                    }
+            if (item.getCoeff() < 0) {
+                if (item.getOptionV2().getDays_left() < strategy.getRollingStrategy().getMinDays()) {
+                    optionsSymbolsToRemove.add(optionSymbol);
                 }
             }
-
-            remove(position, optionsSymbolToRemove, debug);
         }
 
         if (optionsSymbolsToRemove.size() > 0 && Strategy.RollingStrategy.NONE.equals(strategy.getRollingStrategy())) {
-            removeSpread(spreads.get(0), position, debug);
+            remove(position, debug);
+            return;
         }
 
+        for (String optionsSymbolToRemove : optionsSymbolsToRemove) {
+            remove(position, optionsSymbolToRemove, debug);
+        }
     }
 
     private void exitPositionWhenStrike(Strategy strategy, FlowPosition position, double stockPrice, boolean debug) {
@@ -509,47 +470,61 @@ public class FlowDelegate {
             return;
         }
 
-        List<Spread> spreadsToRemove = new ArrayList<>();
+        boolean shouldExit = false;
 
-        for (Spread spread : spreads) {
+        boolean inTheMoney = false;
 
-            for (String optionSymbol : spread.getOptionSymbols()) {
-                FlowPosition.Item item = position.itemsMap.get(optionSymbol);
+        for (String leg : strategy.getLegs()) {
+            double delta = Strategy.getDelta(leg);
+            int coeff = Strategy.getCoeff(leg);
 
-                if (item == null) {
-                    continue;
+            if (coeff < 0) {
+                inTheMoney = delta >= 50;
+                break;
+            }
+        }
+
+        for (String optionSymbol : position.itemsMap.keySet()) {
+            FlowPosition.Item item = position.itemsMap.get(optionSymbol);
+
+            if (item == null) {
+                continue;
+            }
+
+            if (item.getCoeff() > 0) {
+                continue;
+            }
+
+            OptionV2 option = item.getOptionV2();
+            Double strike = option.getStrike();
+
+            if (!inTheMoney) {
+                if (OptionV2.OptionType.call.equals(option.getOption_type()) && stockPrice > strike) {
+                    shouldExit = true;
+                    break;
                 }
-
-                if (item.getCoeff() > 0 && Strategy.ExitStrategy.SHORT_STRIKE.equals(strategy.getExitStrategy())) {
-                    continue;
+                if (OptionV2.OptionType.put.equals(option.getOption_type()) && stockPrice < strike) {
+                    shouldExit = true;
+                    break;
                 }
+            }
 
-                if (item.getCoeff() < 0 && Strategy.ExitStrategy.LONG_STRIKE.equals(strategy.getExitStrategy())) {
-                    continue;
-                }
-
-                OptionV2 option = item.getOptionV2();
-                Double strike = option.getStrike();
-
-                System.out.println("stockPrice:" + stockPrice + " strike " + strike);
-
+            if (inTheMoney) {
                 if (OptionV2.OptionType.call.equals(option.getOption_type()) && stockPrice < strike) {
-                    spreadsToRemove.add(spread);
-                    continue;
+                    shouldExit = true;
+                    break;
                 }
                 if (OptionV2.OptionType.put.equals(option.getOption_type()) && stockPrice > strike) {
-                    spreadsToRemove.add(spread);
+                    shouldExit = true;
+                    break;
                 }
             }
         }
 
-        //remove all
-
-        if (spreadsToRemove.size() > 0) {
-            for (Spread spread : spreadsToRemove) {
-                removeSpread(spread, position, debug);
-            }
+        if (shouldExit) {
+            remove(position, debug);
         }
+
     }
 
     private void roll(Strategy strategy, FlowPosition position, boolean debug) {
@@ -572,7 +547,7 @@ public class FlowDelegate {
         Date date = option.getGreeks_updated_at();
 
         int longDelta = 0;
-        int newCoeff =  Strategy.getCoeff(strategy.getLegs().get(1));
+        int newCoeff = 0;
 
         Set<String> optionsSymbolsToRemove = new HashSet<>();
 
@@ -583,11 +558,15 @@ public class FlowDelegate {
             }
             if (item.getCoeff() < 0) {
                 optionsSymbolsToRemove.add(item.getOptionV2().getOptionV2Id().getSymbol());
-                newCoeff = item.getCoeff();
             }
-            if ((position.itemsMap.size() == 1 && !strategy.getStrategyType().equals(Strategy.StrategyType.SIMPLE)) || item.getCoeff() < 0) {
+            if (item.getCoeff() < 0 || (position.itemsMap.size() == 1 && !strategy.getStrategyType().equals(Strategy.StrategyType.SIMPLE))) {
+
+                newCoeff = Strategy.getCoeff(strategy.getLegs().get(1));
 
                 if (Strategy.StrategyType.RATIO_DIAGONAL.equals(strategy.getStrategyType())) {
+                    newCoeff = -1 * (longDelta / 100 - 1);
+                }
+/**
                     newCoeff = -1 * ((longDelta) / shortDelta);
 
                     if (newCoeff == 0) {
@@ -600,6 +579,8 @@ public class FlowDelegate {
                         newCoeff++;
                     }
                 }
+ **/
+
             }
 
             if (strategy.getRollingStrategy().equals(Strategy.RollingStrategy.ROLL_SAME_STRIKE)) {
