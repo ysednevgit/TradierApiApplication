@@ -37,6 +37,9 @@ public class MainController {
     @Autowired
     private FlowDelegate flowDelegate;
 
+    @Autowired
+    private VolatilityDelegate volatilityDelegate;
+
     @GetMapping("/get_flow")
     public String getFlow(@RequestParam(value = "symbol", required = false) String symbol,
                           @RequestParam(value = "startDate", required = false) String startDate,
@@ -95,6 +98,15 @@ public class MainController {
         return "Success";
     }
 
+    @GetMapping("/get_volatility")
+    public String getStats(@RequestParam(value = "symbol", required = false) String symbol,
+                           @RequestParam(value = "startDate", required = false) String startDate,
+                           @RequestParam(value = "endDate", required = false) String endDate) throws Exception {
+
+        volatilityDelegate.calcVolatility(symbol, startDate, endDate);
+
+        return "Success";
+    }
 
     @PostMapping("/refresh")
     public String refresh() throws ParseException {
