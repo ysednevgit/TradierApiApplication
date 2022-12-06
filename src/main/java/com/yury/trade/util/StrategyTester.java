@@ -3,6 +3,7 @@ package com.yury.trade.util;
 import com.yury.trade.entity.OptionV2;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class StrategyTester {
@@ -75,10 +76,24 @@ public class StrategyTester {
     public List<Strategy> getFlowStrategiesToTest() {
         List<Strategy> strategies = new ArrayList<>();
 
-        strategyType = Strategy.StrategyType.CUSTOM;
-        strategies.add(getStrategy(new Leg(2, 25, 8), new Leg(1, 50, 8, OptionV2.OptionType.put), new Leg(-1, 25, 8, OptionV2.OptionType.put)));
-        strategies.add(getStrategy(new Leg(2, 25, 8), new Leg(1, 50, 8, OptionV2.OptionType.put), new Leg(-2, 25, 8, OptionV2.OptionType.put)));
-//        strategies.add(getStrategy(new Leg(2, 25, 8)));
+        List<List<Integer>> buyDaysLists = new ArrayList<>();
+//        buyDaysLists.add(Arrays.asList(1));
+//        buyDaysLists.add(Arrays.asList(2));
+        buyDaysLists.add(Arrays.asList(4));
+//        buyDaysLists.add(Arrays.asList(4));
+//        buyDaysLists.add(Arrays.asList(5));
+
+        for (List<Integer> buyDays : buyDaysLists) {
+            strategyType = Strategy.StrategyType.CUSTOM;
+            Strategy strategy = getStrategy(new Leg(2, 30, 9), new Leg(1, 50, 9, OptionV2.OptionType.put), new Leg(-2, 30, 9, OptionV2.OptionType.put));
+            strategy.setBuyDays(buyDays);
+            strategy.setExitStrategy(Strategy.ExitStrategy.SHORT_STRIKE);
+
+            strategies.add(strategy);
+        }
+
+
+        //        strategies.add(getStrategy(new Leg(2, 25, 8)));
 //        strategies.add(getStrategy(new Leg(1, 50, 8), new Leg(1, 50, 8, OptionV2.OptionType.put)));
 
 //        Strategy strategy2 = getStrategy(new Leg(-2, 27, 8, OptionV2.OptionType.put));

@@ -7,25 +7,26 @@ import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.util.*;
 
+@Data
 public class FlowPosition implements Serializable {
 
     private static DecimalFormat df2 = new DecimalFormat("###.##");
 
-    public Map<String, Item> itemsMap = new LinkedHashMap<>();
+    private Map<String, Item> itemsMap = new LinkedHashMap<>();
 
-    public Map<String, List<OptionV2>> optionsByOptionSymbolMap = new HashMap<>();
+    private Map<String, List<OptionV2>> optionsByOptionSymbolMap = new HashMap<>();
 
-    public List<Integer> coeffsHistory = new LinkedList<>();
+    private List<Integer> coeffsHistory = new LinkedList<>();
 
-    public int contractSize = 100;
+    private int contractSize = 100;
 
-    public Double shortStrike;
+    private Double shortStrike;
 
-    public double positionDelta = 0;
-    public double positionTheta = 0;
-    public double positionGamma = 0;
-    public double positionPrice = 0;
-    public double adjustments = 0;
+    private double positionDelta = 0;
+    private double positionTheta = 0;
+    private double positionGamma = 0;
+    private double positionPrice = 0;
+    private double adjustments = 0;
 
     public void add(OptionV2 optionV2, int coeff) {
         itemsMap.put(optionV2.getOptionV2Id().getSymbol(), new Item(optionV2, coeff));
