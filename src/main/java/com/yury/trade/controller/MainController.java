@@ -73,6 +73,15 @@ public class MainController {
         return "Success";
     }
 
+    @GetMapping("/draw_volatility_weekday_chart")
+    public String drawWeekdayChart(@RequestParam(value = "symbol") String symbol,
+                                   @RequestParam(value = "startDate") String startDate) throws Exception {
+
+        volatilityDelegate.showWeekdayChart(symbol, startDate);
+
+        return "Success";
+    }
+
     @GetMapping("/get_stats")
     public String getStats(@RequestParam(value = "symbol", required = false) String symbol,
                            @RequestParam(value = "startDate", required = false) String startDate,

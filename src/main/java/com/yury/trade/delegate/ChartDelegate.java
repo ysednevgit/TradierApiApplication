@@ -2,10 +2,8 @@ package com.yury.trade.delegate;
 
 import com.yury.trade.entity.FlowPerformance;
 import com.yury.trade.entity.StrategyPerformanceTotal;
-import com.yury.trade.util.LineChartBuilder;
-import com.yury.trade.util.LineChartDataset;
-import com.yury.trade.util.Strategy;
-import com.yury.trade.util.StrategyTester;
+import com.yury.trade.util.*;
+import org.jfree.data.category.CategoryDataset;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -27,6 +25,21 @@ public class ChartDelegate {
     private FlowDelegate flowDelegate;
 
     private StrategyTester strategyTester = new StrategyTester();
+
+    public void drawVolatilityWeekdayChart(CategoryDataset dataset, String stockSymbol, String fromDate) {
+
+        EventQueue.invokeLater(() -> {
+
+            var ex = new BarChartBuilder("Spikes chart",
+                    dataset, "Spikes by day " + stockSymbol + " from " + fromDate,
+                    "Standard deviation",
+                    "Spikes");
+
+            ex.setVisible(true);
+            ex.setSize(800, 400);
+            ex.setLocation(200, 200);
+        });
+    }
 
     public void drawFlowChart(final String symbol, String startDateString, String endDateString, boolean combo) throws ParseException {
 

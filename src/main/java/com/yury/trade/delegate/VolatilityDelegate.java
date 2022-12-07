@@ -2,7 +2,10 @@ package com.yury.trade.delegate;
 
 import com.yury.trade.entity.StockHistory;
 import com.yury.trade.entity.VolatilityInfo;
+import lombok.Data;
 import org.apache.commons.math3.util.Precision;
+import org.jfree.data.category.CategoryDataset;
+import org.jfree.data.category.DefaultCategoryDataset;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -17,8 +20,53 @@ public class VolatilityDelegate {
 
     private final int MIN_DAYS = 20;
 
+    private Map<Integer, String> weekdayDescr = new LinkedHashMap<>();
+
     @Autowired
     private PersistenceDelegate persistenceDelegate;
+
+    @Autowired
+    private FlowDelegate flowDelegate;
+
+    @Autowired
+    private ChartDelegate chartDelegate;
+
+    public void showWeekdayChart(final String stockSymbol, final String startDateString) throws ParseException {
+
+        calcVolatility(stockSymbol, startDateString, null);
+
+        Map<Integer, DailyData> avgDataMap = buildDayOfTheWeekData(stockSymbol, startDateString);
+
+        chartDelegate.drawVolatilityWeekdayChart(createDataset(avgDataMap), stockSymbol, startDateString);
+    }
+
+    public Map<Integer, DailyData> buildDayOfTheWeekData(final String stockSymbol, final String startDateString) throws ParseException {
+
+        Date startDate = sdf.parse(startDateString);
+
+        List<VolatilityInfo> volatilityInfos = persistenceDelegate.getVolatilityInfoRepository().findByIdSymbolAndIdDate(stockSymbol, startDate);
+
+        Map<Integer, List<DailyData>> dataMap = new LinkedHashMap<>();
+
+        for (VolatilityInfo volatilityInfo : volatilityInfos) {
+            int dayOfWeek = flowDelegate.getDayOfWeek(flowDelegate.convertToLocalDate(volatilityInfo.getId().getDate()));
+
+            DailyData dailyData = new DailyData(Math.abs(volatilityInfo.getCC_spike()), Math.abs(volatilityInfo.getOC_spike()), Math.abs(volatilityInfo.getCO_spike()));
+
+            if (!dataMap.containsKey(dayOfWeek)) {
+                dataMap.put(dayOfWeek, new LinkedList<>());
+            }
+            dataMap.get(dayOfWeek).add(dailyData);
+        }
+
+        Map<Integer, DailyData> avgDataMap = new TreeMap<>();
+
+        for (Map.Entry<Integer, List<DailyData>> entry : dataMap.entrySet()) {
+            avgDataMap.put(entry.getKey(), getAvg(entry.getValue()));
+        }
+
+        return avgDataMap;
+    }
 
     public void calcVolatility(final String stockSymbol, final String startDateString, final String endDateString) throws ParseException {
 
@@ -50,6 +98,21 @@ public class VolatilityDelegate {
         persistenceDelegate.getVolatilityInfoRepository().saveAll(volatilityInfos);
 
         System.out.println("Saved into VolatilityInfo  " + volatilityInfos.size());
+    }
+
+    public CategoryDataset createDataset(Map<Integer, DailyData> avgDataMap) {
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+
+        for (Map.Entry<Integer, DailyData> entry : avgDataMap.entrySet()) {
+
+            String keyDescr = getWeekday(entry.getKey());
+
+            dataset.addValue(entry.getValue().getCc(), "C_C spike", keyDescr);
+            dataset.addValue(entry.getValue().getCo(), "C_O spike", keyDescr);
+            dataset.addValue(entry.getValue().getOc(), "O_C spike", keyDescr);
+        }
+
+        return dataset;
     }
 
     private List<VolatilityInfo> createVolatilityInfos(Map<Date, StockHistory> stockHistoryMap) {
@@ -214,6 +277,56 @@ public class VolatilityDelegate {
             result.put(stockHistory.getStockHistoryId().getDate(), stockHistory);
         }
         return result;
+    }
+
+    private DailyData getAvg(List<DailyData> list) {
+
+        if (list.size() == 0) {
+            return new DailyData(0d, 0d, 0d);
+        }
+
+        double sumCC = 0;
+        double sumCO = 0;
+        double sumOC = 0;
+
+        for (DailyData dailyData : list) {
+            sumCC += dailyData.getCc();
+            sumCO += dailyData.getCo();
+            sumOC += dailyData.getOc();
+        }
+
+        return new DailyData(Precision.round(sumCC / list.size(), 2),
+                Precision.round(sumOC / list.size(), 2),
+                Precision.round(sumCO / list.size(), 2));
+    }
+
+    private void populateWeekdayDescr() {
+        weekdayDescr.put(1, "Mon");
+        weekdayDescr.put(2, "Tue");
+        weekdayDescr.put(3, "Wed");
+        weekdayDescr.put(4, "Thu");
+        weekdayDescr.put(5, "Fri");
+    }
+
+    private String getWeekday(Integer i) {
+        if (weekdayDescr.size() == 0) {
+            populateWeekdayDescr();
+        }
+        return weekdayDescr.get(i);
+    }
+
+    @Data
+    public class DailyData {
+
+        public DailyData(Double cc, Double oc, Double co) {
+            this.cc = cc;
+            this.oc = oc;
+            this.co = co;
+        }
+
+        private Double cc = 0d;
+        private Double oc = 0d;
+        private Double co = 0d;
     }
 
     private enum ReturnType {
