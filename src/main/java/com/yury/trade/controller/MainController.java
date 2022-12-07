@@ -122,9 +122,10 @@ public class MainController {
 
     @PostMapping("/add_stock_history")
     public String addStockHistory(@RequestParam(value = "start") String start,
-                                  @RequestParam(value = "end") String end) throws IOException {
+                                  @RequestParam(value = "end") String end,
+                                  @RequestParam(value = "all", defaultValue = "false") boolean all) throws IOException {
 
-        return stockHistoryDelegate.addStockHistory(start, end);
+        return stockHistoryDelegate.addStockHistory(start, end, all);
     }
 
     @PostMapping("/add_stock_symbols")

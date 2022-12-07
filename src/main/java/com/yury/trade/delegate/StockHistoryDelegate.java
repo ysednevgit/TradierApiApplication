@@ -14,7 +14,6 @@ import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @Component
@@ -28,6 +27,9 @@ public class StockHistoryDelegate {
 
     @Autowired
     private TradierDelegate tradierDelegate;
+
+    @Autowired
+    private StockQuoteDelegate stockQuoteDelegate;
 
     @Autowired
     MarketDelegate marketDelegate;
@@ -46,9 +48,21 @@ public class StockHistoryDelegate {
         return objectMapper;
     }
 
-    public String addStockHistory(String start, String end) throws IOException {
+    public String addStockHistory(String start, String end, boolean all) throws IOException {
 
-        for (String stockSymbol : marketDelegate.getEnabledStockSymbols()) {
+        List<String> stockSymbols;
+
+        if (all) {
+            System.out.println("Adding stock quotes..");
+            stockQuoteDelegate.addStockQuotes();
+
+            stockSymbols = persistenceDelegate.getStockQuoteRepository().findGoodSymbols();
+
+        } else {
+            stockSymbols = marketDelegate.getEnabledStockSymbols();
+        }
+
+        for (String stockSymbol : stockSymbols) {
             List<StockHistory> stockHistories = getStockHistories(stockSymbol, start, end);
 
             persistenceDelegate.getStockHistoryRepository().saveAll(stockHistories);

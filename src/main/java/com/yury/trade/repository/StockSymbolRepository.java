@@ -14,6 +14,9 @@ public interface StockSymbolRepository extends CrudRepository<StockSymbol, Strin
     @Query("SELECT symbol FROM StockSymbol WHERE enabled = 'TRUE'")
     List<String> findEnabledSymbols();
 
+    @Query("SELECT symbol FROM StockSymbol WHERE last > 12 AND average_volume > 1000 AND type = 'stock'")
+    List<String> findGoodSymbols();
+
 /**
  @Query("SELECT s FROM Symbol s WHERE last > 12 AND average_volume > 1000 AND type = 'stock'")
  Collection<StockSymbol> findGoodSymbols();

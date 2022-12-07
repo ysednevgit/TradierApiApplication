@@ -76,6 +76,7 @@ public class StrategyTester {
     public List<Strategy> getFlowStrategiesToTest() {
         List<Strategy> strategies = new ArrayList<>();
 
+/**
         List<List<Integer>> buyDaysLists = new ArrayList<>();
 //        buyDaysLists.add(Arrays.asList(1));
 //        buyDaysLists.add(Arrays.asList(2));
@@ -91,7 +92,7 @@ public class StrategyTester {
 
             strategies.add(strategy);
         }
-
+**/
 
         //        strategies.add(getStrategy(new Leg(2, 25, 8)));
 //        strategies.add(getStrategy(new Leg(1, 50, 8), new Leg(1, 50, 8, OptionV2.OptionType.put)));
@@ -106,9 +107,9 @@ public class StrategyTester {
 //        delta = 30;
 //        strategies.add(getStrategy(new Leg(coeff, delta, days), new Leg(coeff, delta, days, OptionV2.OptionType.put)));
 
-//        strategyType = Strategy.StrategyType.RATIO_DIAGONAL;
-//        strategies.add(getStrategy(new Leg(20, 25, 330), new Leg(-4, 80, 8), null, null, Strategy.RollingStrategy.CUSTOM));
-//        strategies.add(getStrategy(new Leg(20, 25, 330), new Leg(-5, 80, 8)));
+        strategyType = Strategy.StrategyType.STRADDLE;
+        strategies.add(getStrategy(new Leg(-1, 25, 30), new Leg(-1, 25, 30, OptionV2.OptionType.put), null, null, null, null, Strategy.ExitStrategy.SHORT_STRIKE));
+        strategies.add(getStrategy(new Leg(-1, 25, 45), new Leg(-1, 25, 45, OptionV2.OptionType.put), null, null, null, null, Strategy.ExitStrategy.SHORT_STRIKE));
 
 
 /**

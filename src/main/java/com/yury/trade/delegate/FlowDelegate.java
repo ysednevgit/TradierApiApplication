@@ -561,15 +561,8 @@ public class FlowDelegate {
         }
 
         if (shouldExit) {
-            //remove(position, debug);
-
-            remove(position, hitOption.getOptionV2Id().getSymbol(), debug);
-
-            List<OptionV2> dateOptions = persistenceDelegate.getOptionRepository().findByUnderlyingAndGreeks_updated_at(hitOption.getUnderlying(), hitOption.getGreeks_updated_at());
-            add(Strategy.getDelta(strategy.getLegs().get(2)), hitOption.getDays_left(), hitOption.getOption_type(), dateOptions, position, hitCoeff - 1, hitOption.getGreeks_updated_at(), debug);
+            remove(position, debug);
         }
-
-
     }
 
     private void roll(Strategy strategy, FlowPosition position, boolean debug) {

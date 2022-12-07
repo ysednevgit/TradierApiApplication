@@ -28,6 +28,9 @@ public class PersistenceDelegate {
     @Autowired
     private StrategyPerformanceRepository strategyPerformanceRepository;
 
+    @Autowired
+    private VolatilityInfoRepository volatilityInfoRepository;
+
     public StockSymbolRepository getStockSymbolRepository() {
         return stockSymbolRepository;
     }
@@ -54,5 +57,9 @@ public class PersistenceDelegate {
 
     public StrategyPerformanceTotalRepository getStrategyPerformanceTotalRepository() {
         return strategyPerformanceTotalRepository;
+    }
+
+    public VolatilityInfoRepository getVolatilityInfoRepository() {
+        return volatilityInfoRepository;
     }
 }
