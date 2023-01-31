@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yury.trade.delegate.*;
 import com.yury.trade.entity.OptionV2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -41,7 +43,7 @@ public class MainController {
     private VolatilityDelegate volatilityDelegate;
 
     @GetMapping("/get_flow")
-    public String getFlow(@RequestParam(value = "symbol", required = false) String symbol,
+    public ResponseEntity<String> getFlow(@RequestParam(value = "symbol", required = false) String symbol,
                           @RequestParam(value = "startDate", required = false) String startDate,
                           @RequestParam(value = "endDate", required = false) String endDate,
                           @RequestParam(value = "debug", required = false) boolean debug,
@@ -49,7 +51,7 @@ public class MainController {
 
         flowDelegate.getFlow(symbol, startDate, endDate, debug, drawChart);
 
-        return "Success";
+        return new ResponseEntity("Success", HttpStatus.OK);
     }
 
     @GetMapping("/draw_chart")

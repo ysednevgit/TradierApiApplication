@@ -22,6 +22,8 @@ public class FlowPosition implements Serializable {
 
     private Double shortStrike;
 
+    private OptionV2 lastOption;
+
     private double positionDelta = 0;
     private double positionTheta = 0;
     private double positionGamma = 0;
@@ -34,6 +36,8 @@ public class FlowPosition implements Serializable {
         if (coeff < 0) {
             shortStrike = optionV2.getStrike();
         }
+
+        lastOption = optionV2;
     }
 
     public int getOptionsCount() {

@@ -6,10 +6,14 @@ import java.util.List;
 
 public class TradeInfo {
 
-    public static void showInfo(List<Trade> trades) {
+    public static String getInfo(List<Trade> trades) {
 
-        System.out.println();
-        System.out.println("Trades:");
+        StringBuilder info = new StringBuilder();
+
+        info.append("\n");
+        info.append("\n");
+
+        info.append("Trades:");
 
         List<Integer> upMoves = new ArrayList<>();
         List<Integer> downMoves = new ArrayList<>();
@@ -27,8 +31,9 @@ public class TradeInfo {
                 continue;
             }
 
-            System.out.println(trade);
-            System.out.println();
+            info.append("\n");
+            info.append(trade);
+            info.append("\n");
 
             int move = (int) trade.getProfit();
 
@@ -45,20 +50,27 @@ public class TradeInfo {
             }
         }
 
-        System.out.println("Total trades: " + trades.size());
+        info.append("\n").append("Total trades: " + trades.size());
 
-        double profitable = upMoves.size() * 100 / (upMoves.size() + downMoves.size());
+        double diviser = upMoves.size() + downMoves.size();
+        if (diviser == 0) {
+            diviser = 1;
+        }
 
-        System.out.println("Profitable %: " + profitable);
-        System.out.println("Loss %: " + (100 - profitable));
-        System.out.println();
+        double profitable = upMoves.size() * 100 / diviser;
 
-        System.out.println("Avg profit: " + getAvg(upMoves));
-        System.out.println("Avg loss: " + getAvg(downMoves));
-        System.out.println();
+        info.append("\n").append("Profitable %: " + profitable);
+        info.append("\n").append("Loss %: " + (100 - profitable));
+        info.append("\n");
 
-        System.out.println("Max profit: " + maxUp);
-        System.out.println("Max loss: " + maxDown);
+        info.append("\n").append("Avg profit: " + getAvg(upMoves));
+        info.append("\n").append("Avg loss: " + getAvg(downMoves));
+        info.append("\n");
+
+        info.append("\n").append("Max profit: " + maxUp);
+        info.append("\n").append("Max loss: " + maxDown);
+
+        return info.toString();
     }
 
     private static int getAvg(List<Integer> list) {

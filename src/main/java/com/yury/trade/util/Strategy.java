@@ -76,6 +76,15 @@ public class Strategy {
         return "Strategy{" + name + " " + des + rs + es + pes + bd + "}";
     }
 
+    public String getShortDescription() {
+        String rs = !RollingStrategy.NONE.equals(rollingStrategy) ? rollingStrategy + " " : "";
+        String pes = !ProfitExitStrategy.NONE.equals(profitExitStrategy) ? profitExitStrategy.name() : "";
+        String es = !ExitStrategy.NONE.equals(exitStrategy) ? exitStrategy.name() : "";
+        String des = description != null ? description : "";
+
+        return "Strategy{" + name + " " + des + rs + es + pes + "}";
+    }
+
     public enum RollingStrategy {
         ROLL_SAME_STRIKE,
         ROLL_SAME_EXPIRATION,
@@ -119,10 +128,12 @@ public class Strategy {
     public enum StrategyType {
         RATIO_DIAGONAL,
         RATIO_DIAGONAL_2by1,
+        RATIO_DIAGONAL_6by1,
         DIAGONAL,
         CALENDAR,
         DOUBLE_CALENDAR,
         STRADDLE,
+        STRADDLE_WITH_TAIL,
         CUSTOM,
         SIMPLE,
         RATIO,

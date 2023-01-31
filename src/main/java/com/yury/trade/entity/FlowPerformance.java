@@ -32,6 +32,9 @@ public class FlowPerformance {
     @Lob
     private String chartData = "";
 
+    @Lob
+    private String tradesData = "";
+
     private Integer maxDrawDown;
 
     private Double stockChange;
